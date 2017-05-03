@@ -1,0 +1,37 @@
+{
+    "databases": {
+        "common": {
+            "dialect": "postgres",
+            "host": "127.0.0.1",
+            "port": 5432,
+            "name": "common",
+            "username": "soglad",
+            "password": "soglad"
+        },
+        "redis": {
+            "host": "172.17.0.1",
+            "port": 6379,
+            "password": "redis",
+            "db": 0
+        }
+    },
+    "log4js": {
+        "cwd": "var/logs",
+        "appenders": [
+            {
+                "category": "test",
+                "type": "dateFile",
+                "filename": "test.log",
+                "pattern": "-yyyy-MM-dd",
+                "alwaysIncludePattern": false
+            },
+            {
+                "category": "test-db",
+                "type": "dateFile",
+                "filename": "test-db.log",
+                "pattern": "-yyyy-MM-dd",
+                "alwaysIncludePattern": false
+            }
+        ]
+    }
+}

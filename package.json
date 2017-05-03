@@ -1,0 +1,48 @@
+{
+    "name": "fusion",
+    "version": "1.0.0",
+    "description": "A framework for user authorization and authentication, principle like simov/grant or jaredhanson/passport, but also including server schema adjust refered from oauthjs/koa-oauth-server,  powered by oauth2, javascript",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/so-glad/fusion.git"
+    },
+    "keywords": [
+        "passport",
+        "user",
+        "auth",
+        "server",
+        "oauth"
+    ],
+    "author": "palmtale <palmtale@glad.so>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/so-glad/fusion/issues"
+    },
+    "homepage": "https://github.com/so-glad/fusion#readme",
+    "devDependencies": {
+        "babel": "^6.23.0",
+        "babel-cli": "^6.24.1",
+        "babel-eslint": "^7.2.3",
+        "babel-preset-es2015": "^6.24.1",
+        "babel-preset-stage-0": "^6.24.1",
+
+        "connect": "^3.6.1",
+        "express": "^4.15.2",
+        "hapi": "^16.1.1",
+        "koa": "^2.2.0",
+        "koa-log4": "^2.2.1",
+        "koa-router": "^7.1.1",
+        "mocha": "^3.3.0",
+        "chai": "^3.5.0",
+        "mochawesome": "^2.1.0",
+        "pg": "^6.1.5"
+    },
+    "dependencies": {
+        "oauth2-server": "^3.0.0-b4",
+        "sequelize": "^3.30.4"
+    }
+}

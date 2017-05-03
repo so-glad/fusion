@@ -1,0 +1,8 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea
+.eclipse
+.vscode
+.atom
+.sublime
+
+src
