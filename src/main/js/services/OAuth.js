@@ -84,11 +84,24 @@ export default class OAuthService {
     getClient = async (clientId, clientSecret) => {
         try {
             const oauthClient = await OAuthClient.findOne({where: {id: clientId, secret: clientSecret, revoked: false}});
+            const grants = [];
+            if((1 & oauthClient.grantTypes) === 1) {
+                grants.push('password');
+            }
+            if((2 & oauthClient.grantTypes) === 2) {
+                grants.push('client_credentials');
+            }
+            if((4 & oauthClient.grantTypes) === 4) {
+                grants.push('refresh_token');
+            }
+            if((8 & oauthClient.grantTypes) === 8) {
+                grants.push('authorization_code');
+            }
             return {
                 id: oauthClient.id,
                 clientId: oauthClient.id,
                 clientSecret: oauthClient.secret,
-                grants: ['password', 'refresh_token']
+                grants: grants
             };
         } catch(e) {
             logger.error(e);
@@ -98,7 +111,7 @@ export default class OAuthService {
 
     getUser = async (username, password) => {
         try {
-            const user = User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
+            const user = await User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
             if(bcrypt.compareSync(password, user.password)){
                 return user;
             }

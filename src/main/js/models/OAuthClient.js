@@ -65,15 +65,10 @@ export default class OAuthClient extends ModelClass {
                 field: 'redirect',
                 unique: true
             },
-            password_client: {
-                type: Sequelize.BOOLEAN,
-                field: 'password_client',
-                default: false
-            },
-            personal_access_client: {
-                type: Sequelize.BOOLEAN,
-                field: 'personal_access_client',
-                default: false
+            grantTypes: {
+                type: Sequelize.INTEGER,
+                field: 'grant_types',
+                defaultValue: 1
             },
             revoked: {
                 type: Sequelize.BOOLEAN,
