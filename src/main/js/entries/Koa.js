@@ -20,9 +20,9 @@ class KoaOAuthServer {
 
     constructor(options) {
         //TODO Actually it is not required co.
-        for (const fn in options.model) {
-            options.model[fn] = co.wrap(options.model[fn]);
-        }
+        // for (const fn in options.model) {
+        //     options.model[fn] = co.wrap(options.model[fn]);
+        // }
 
         this.server = new NodeOAuthServer(options);
     }
@@ -88,11 +88,12 @@ class KoaOAuthServer {
             const response = new Response(ctx.response);
 
             try {
+                const token = await this.server.token(request, response);
                 ctx.state.oauth = {
-                    token: await this.server.token(request, response)
+                    token: token
                 };
 
-                this.handleResponse(response);
+                this.handleResponse(ctx, response);
             } catch (e) {
                 return this.handleError(e, response);
             }
@@ -102,14 +103,17 @@ class KoaOAuthServer {
     };
 
     handleResponse = (ctx, response) => {
-        ctx.response.body = response.body;
-        ctx.response.status = response.status;
-        ctx.response.setHeaders(response.headers);
+        ctx.res.statusCode = response.status;
+        for(const header in response.headers){
+            ctx.res.setHeader(header, response.headers[header]);
+        }
+        ctx.res.setHeader('content-type', 'application/json;charset=UTF-8');
+        ctx.res.end(JSON.stringify(response.body));
     };
 
     handleError = (e, ctx, response) => {
         if (response) {
-            ctx.res.setHeaders(response.headers);
+            ctx.res.setHeader(response.headers);
         }
 
         if (e instanceof UnauthorizedRequestError) {

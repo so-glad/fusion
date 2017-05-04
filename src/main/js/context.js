@@ -18,10 +18,10 @@ import {
 
 import RoleClass from './models/Role';
 import UserClass from './models/User';
-import OAuthClient from './models/OAuthClient';
-import OAuthCode from './models/OAuthCode';
-import OAuthAccessToken from './models/OAuthAccessToken';
-import OAuthRefreshToken from './models/OAuthRefreshToken';
+import OAuthClientClass from './models/OAuthClient';
+import OAuthCodeClass from './models/OAuthCode';
+import OAuthAccessTokenClass from './models/OAuthAccessToken';
+import OAuthRefreshTokenClass from './models/OAuthRefreshToken';
 
 log4js.configure(loggerConfig, {cwd: loggerConfig.cwd});
 
@@ -40,13 +40,33 @@ const common = new Sequelize(databases.common.name,
     logging: msg => dbLogger.info.apply(dbLogger, [msg])
 });
 
+
+const defaultOptions = {logger: dbLogger};
+
+const Role = new RoleClass(common, defaultOptions);
+
+UserClass.addBelongTo(Role.delegate, 'role', 'role_id');
+const User = new UserClass(common, defaultOptions);
+
+OAuthClientClass.addBelongTo(User.delegate, 'user', 'user_id');
+const OAuthClient = new OAuthClientClass(common, defaultOptions);
+
+OAuthCodeClass.addBelongTo(User.delegate, 'user', 'user_id');
+OAuthCodeClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
+const OAuthCode = new OAuthCodeClass(common, defaultOptions);
+
+OAuthAccessTokenClass.addBelongTo(User.delegate, 'user', 'user_id');
+OAuthAccessTokenClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
+const OAuthAccessToken = new OAuthAccessTokenClass(common, defaultOptions);
+OAuthRefreshTokenClass.addBelongTo(OAuthAccessToken.delegate, 'accessToken', 'access_token_id');
+
 module.exports = {
     models: {
-        Role: new RoleClass(common, {logger: dbLogger}),
-        User: new UserClass(common, {logger: dbLogger}),
-        OAuthClient: new OAuthClient(common, {logger: dbLogger}),
-        OAuthCode: new OAuthCode(common, {logger: dbLogger}),
-        OAuthAccessToken: new OAuthAccessToken(common, {logger: dbLogger}),
-        OAuthRefreshToken: new OAuthRefreshToken(common, {logger: dbLogger})
+        Role: Role,
+        User: User,
+        OAuthClient: OAuthClient,
+        OAuthCode: OAuthCode,
+        OAuthAccessToken: OAuthAccessToken,
+        OAuthRefreshToken: new OAuthRefreshTokenClass(common, defaultOptions)
     }
 };

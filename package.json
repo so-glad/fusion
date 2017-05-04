@@ -34,14 +34,18 @@
         "express": "^4.15.2",
         "hapi": "^16.1.1",
         "koa": "^2.2.0",
+        "koa-bodyparser": "^4.2.0",
         "koa-log4": "^2.2.1",
         "koa-router": "^7.1.1",
+
         "mocha": "^3.3.0",
         "chai": "^3.5.0",
         "mochawesome": "^2.1.0",
         "pg": "^6.1.5"
     },
     "dependencies": {
+        "bcrypt": "^1.0.2",
+        "lodash": "^4.17.4",
         "oauth2-server": "^3.0.0-b4",
         "sequelize": "^3.30.4"
     }

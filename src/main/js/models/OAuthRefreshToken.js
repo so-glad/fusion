@@ -34,9 +34,11 @@ export default class OAuthRefreshToken extends ModelClass {
 
             timestamps: true,
 
-            deletedAt: 'expires_at',
+            createdAt: 'timestamp',
 
-            paranoid: true,
+            updatedAt: false,
+
+            paranoid: false,
 
             underscored: true
         };
@@ -45,7 +47,7 @@ export default class OAuthRefreshToken extends ModelClass {
     get fieldsDefine() {
         return {
             id: {
-                type: Sequelize.BIGINT.UNSIGNED,
+                type: Sequelize.STRING,
                 primaryKey: true,
                 autoIncrement: false,
                 defaultValue: Sequelize.DEFAULT,
@@ -55,6 +57,10 @@ export default class OAuthRefreshToken extends ModelClass {
                 type: Sequelize.BOOLEAN,
                 field: 'revoked',
                 default: false
+            },
+            expiresAt: {
+                type: Sequelize.DATE,
+                field: 'expires_at'
             }
         }
     };

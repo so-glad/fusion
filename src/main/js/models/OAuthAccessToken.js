@@ -35,9 +35,11 @@ export default class OAuthAccessToken extends ModelClass {
 
             timestamps: true,
 
-            deletedAt: 'expires_at',
+            createdAt: 'timestamp',
 
-            paranoid: true,
+            updatedAt: false,
+
+            paranoid: false,
 
             underscored: true
         };
@@ -46,7 +48,7 @@ export default class OAuthAccessToken extends ModelClass {
     get fieldsDefine() {
         return {
             id: {
-                type: Sequelize.BIGINT.UNSIGNED,
+                type: Sequelize.STRING,
                 primaryKey: true,
                 autoIncrement: false,
                 defaultValue: Sequelize.DEFAULT,
@@ -55,17 +57,21 @@ export default class OAuthAccessToken extends ModelClass {
             name: {
                 type: Sequelize.STRING,
                 field: 'name',
-                default: ''
+                defaultValue: ''
             },
             scopes: {
                 type: Sequelize.STRING,
                 field: 'scopes',
-                default: '*'
+                defaultValue: '*'
             },
             revoked: {
                 type: Sequelize.BOOLEAN,
                 field: 'revoked',
-                default: false
+                defaultValue: false
+            },
+            expiresAt: {
+                type: Sequelize.DATE,
+                field: 'expires_at'
             }
         }
     };

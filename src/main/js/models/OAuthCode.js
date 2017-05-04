@@ -34,9 +34,11 @@ export default class OAuthCode extends ModelClass {
 
             timestamps: true,
 
-            deletedAt: 'expires_at',
+            createdAt: 'timestamp',
 
-            paranoid: true,
+            updatedAt: false,
+
+            paranoid: false,
 
             underscored: true
         };
@@ -60,6 +62,10 @@ export default class OAuthCode extends ModelClass {
                 type: Sequelize.BOOLEAN,
                 field: 'revoked',
                 default: false
+            },
+            expiresAt: {
+                type: Sequelize.DATE,
+                field: 'expires_at'
             }
         }
     };

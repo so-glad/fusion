@@ -4,7 +4,9 @@
  * @author palmtale
  * @since 2017/5/3.
  */
- 
+
+import _ from 'lodash';
+
  
 export default class ModelClass {
 
@@ -23,7 +25,7 @@ export default class ModelClass {
     delegate = null;
 
     constructor(provider, options) {
-
+        options = _.cloneDeep(options);
         this.provider = provider;
 
         for(const option in this.defaultOptions) {
@@ -46,7 +48,7 @@ export default class ModelClass {
 
         this.delegate.sync({force: false})
             .then(() => {
-                this.logger.info("Connected table " + options.tableName);
+                this.logger.trace("Connected table " + options.tableName);
             }).catch((e) => {
                 this.logger.error("Error while connecting table " + options.tableName + ", cause: " + e.message);
             }
