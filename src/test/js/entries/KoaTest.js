@@ -25,33 +25,13 @@ const oauthServer = new OAuthServer({
 });
 
 router.get('/oauth/auth', oauthServer.authorize);
-router.post('/oauth/token', oauthServer.token);
-
-const countSession = (ctx) => {
-    ctx.session.count = ctx.session.count || 0;
-    ctx.session.count++;
-    return ctx.session.count;
-};
-router.get('/session/test', async(ctx) => {
-    ctx.statusCode = 200;
-    ctx.body = countSession(ctx) + ' views';
-});
-
-router.get('/session/remove', async (ctx, next) => {
-    ctx.session = null;
-    ctx.statusCode = 200;
-    ctx.body = 'Session removed';
-});
-
-router.get('/session/regen', async (ctx, next) => {
-    const before = ctx.session.count;
-    console.info(before);
-    await ctx.regenerateSession();
-    const after = countSession(ctx);
-    ctx.statusCode = 200;
-    ctx.body = before + ':' + after;
-
-});
+router.post('/oauth/token', async(ctx, next) => {
+    await oauthServer.token(ctx, next);
+    if(ctx.state.oauth && ctx.regenerateSession) {
+        await ctx.regenerateSession();
+        ctx.session.accessToken = ctx.state.oauth.token;
+    }
+} );
 
 app.keys = ['fusion'];
 app.use(bodyParser());
