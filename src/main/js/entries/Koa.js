@@ -33,8 +33,7 @@ class KoaOAuthServer {
      *
      * (See: https://tools.ietf.org/html/rfc6749#section-7)
      */
-    authenticate = () => {
-        return async (ctx, next) => {
+    authenticate = async (ctx, next) => {
             const request = new Request(ctx.request);
 
             try {
@@ -47,7 +46,6 @@ class KoaOAuthServer {
 
             await next();
         };
-    };
 
     /**
      * Authorization Middleware.
@@ -56,8 +54,7 @@ class KoaOAuthServer {
      *
      * (See: https://tools.ietf.org/html/rfc6749#section-3.1)
      */
-    authorize = () => {
-        return async (ctx, next) => {
+    authorize = async (ctx, next) => {
             const request = new Request(ctx.request);
             const response = new Response(ctx.response);
 
@@ -73,7 +70,6 @@ class KoaOAuthServer {
 
             await next();
         };
-    };
 
     /**
      * Grant Middleware
@@ -82,8 +78,7 @@ class KoaOAuthServer {
      *
      * (See: https://tools.ietf.org/html/rfc6749#section-3.2)
      */
-    token = () => {
-        return async (ctx, next) => {
+    token = async (ctx, next) => {
             const request = new Request(ctx.request);
             const response = new Response(ctx.response);
 
@@ -100,7 +95,6 @@ class KoaOAuthServer {
 
             await next();
         };
-    };
 
     handleResponse = (ctx, response) => {
         ctx.res.statusCode = response.status;
@@ -123,7 +117,7 @@ class KoaOAuthServer {
             ctx.status = e.code;
         }
         return ctx.app.emit('error', e, this);
-    }
+    };
 }
 
 export default KoaOAuthServer;
