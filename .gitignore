@@ -66,5 +66,6 @@ typings/
 .env
 
 etc
-lib
+# temp put lib for npm use from github
+#lib
 var
