@@ -14,23 +14,16 @@ import Router from 'koa-router';
 
 import RedisStore from '../../../main/js/stores/Redis';
 import OAuth from '../../../main/js/services/OAuth';
-import OAuthServer from '../../../main/js/entries/Koa';
+import OAuthServer from '../../../main/js/middlewares/KoaOAuthServer';
 
 
 const app = new Koa();
 const router = new Router();
-const oauthServer = new OAuthServer({
-    debug: true,
-    model: new OAuth()
-});
+const oauthServer =
 
 router.get('/oauth/auth', oauthServer.authorize);
 router.post('/oauth/token', async(ctx, next) => {
-    await oauthServer.token(ctx, next);
-    if(ctx.state.oauth && ctx.regenerateSession) {
-        await ctx.regenerateSession();
-        ctx.session.accessToken = ctx.state.oauth.token;
-    }
+
 } );
 
 app.keys = ['fusion'];

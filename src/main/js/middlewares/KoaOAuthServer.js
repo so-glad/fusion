@@ -14,9 +14,10 @@ import NodeOAuthServer, {
 } from 'oauth2-server';
 
 
-class KoaOAuthServer {
+export default class KoaOAuthServer {
 
     server = null;
+    service = null;
 
     constructor(options) {
         //TODO Actually it is not required co.
@@ -25,6 +26,7 @@ class KoaOAuthServer {
         // }
 
         this.server = new NodeOAuthServer(options);
+        this.service = options.model;
     }
     /**
      * Authentication Middleware.
@@ -34,18 +36,16 @@ class KoaOAuthServer {
      * (See: https://tools.ietf.org/html/rfc6749#section-7)
      */
     authenticate = async (ctx, next) => {
-            const request = new Request(ctx.request);
-
-            try {
-                ctx.state.oauth = {
-                    token: await this.server.authenticate(request)
-                };
-            } catch (e) {
-                return this.handleError(e);
-            }
-
-            await next();
-        };
+        const request = new Request(ctx.request);
+        try {
+            ctx.state.oauth = {
+                token: await this.server.authenticate(request)
+            };
+        } catch (e) {
+            return this.handleError(e);
+        }
+        await next();
+    };
 
     /**
      * Authorization Middleware.
@@ -55,21 +55,19 @@ class KoaOAuthServer {
      * (See: https://tools.ietf.org/html/rfc6749#section-3.1)
      */
     authorize = async (ctx, next) => {
-            const request = new Request(ctx.request);
-            const response = new Response(ctx.response);
+        const request = new Request(ctx.request);
+        const response = new Response(ctx.response);
+        try {
+            ctx.state.oauth = {
+                code: await this.server.authorize(request, response)
+            };
 
-            try {
-                ctx.state.oauth = {
-                    code: await this.server.authorize(request, response)
-                };
-
-                this.handleResponse(response);
-            } catch (e) {
-                return this.handleError(e, response);
-            }
-
-            await next();
-        };
+            this.handleResponse(response);
+        } catch (e) {
+            return this.handleError(e, response);
+        }
+        await next();
+    };
 
     /**
      * Grant Middleware
@@ -79,35 +77,37 @@ class KoaOAuthServer {
      * (See: https://tools.ietf.org/html/rfc6749#section-3.2)
      */
     token = async (ctx, next) => {
-            const request = new Request(ctx.request);
-            const response = new Response(ctx.response);
+        const request = new Request(ctx.request);
+        const response = new Response(ctx.response);
+        try {
+            const token = await this.server.token(request, response);
+            ctx.state.oauth = {
+                token: token
+            };
 
-            try {
-                const token = await this.server.token(request, response);
-                ctx.state.oauth = {
-                    token: token
-                };
+            this.handleResponse(ctx, response);
+        } catch (e) {
+            return this.handleError(e, response);
+        }
+        await next();
+    };
 
-                this.handleResponse(ctx, response);
-            } catch (e) {
-                return this.handleError(e, response);
-            }
-
-            await next();
-        };
+    revokeToken = (token) => {
+        this.service.revokeToken(token);
+    };
 
     handleResponse = (ctx, response) => {
         ctx.res.statusCode = response.status;
         for(const header in response.headers){
             ctx.res.setHeader(header, response.headers[header]);
         }
-        ctx.res.setHeader('content-type', 'application/json;charset=UTF-8');
-        ctx.res.end(JSON.stringify(response.body));
     };
 
     handleError = (e, ctx, response) => {
         if (response) {
-            ctx.res.setHeader(response.headers);
+            for(const header in response.headers){
+                ctx.res.setHeader(header, response.headers[header]);
+            }
         }
 
         if (e instanceof UnauthorizedRequestError) {
@@ -118,6 +118,4 @@ class KoaOAuthServer {
         }
         return ctx.app.emit('error', e, this);
     };
-}
-
-export default KoaOAuthServer;
+};

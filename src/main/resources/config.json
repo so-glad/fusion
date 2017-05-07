@@ -1,4 +1,10 @@
 {
+    "path": {
+        "server": "src/main/js",
+        "resources": "src/main/resources",
+        "client": "src/main/web"
+    },
+
     "databases": {
         "common": {
             "dialect": "postgres",
@@ -23,6 +29,7 @@
             "db": 0
         }
     },
+
     "log4js": {
         "cwd": "var/logs",
         "appenders": [
@@ -41,5 +48,6 @@
                 "alwaysIncludePattern": false
             }
         ]
-    }
+    },
+
 }

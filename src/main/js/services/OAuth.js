@@ -9,15 +9,21 @@
 
 import bcrypt from 'bcrypt';
 import log4js from 'koa-log4';
-import {models} from '../context';
 
 
 const logger = log4js.getLogger('fusion');
-const {User, OAuthClient, OAuthAccessToken, OAuthRefreshToken} = models;
+
 
 export default class OAuthService {
 
+    models = null;
+
+    constructor(models) {
+        this.models = models;
+    }
+
     saveToken = (token, client, user) => {
+        const {OAuthAccessToken, OAuthRefreshToken} = this.models;
         const accessToken = {id: token.accessToken, expiresAt: token.accessTokenExpiresAt, user_id: user.id, client_id: client.clientId};
         OAuthAccessToken.create(accessToken)
             .then(savedToken => {
@@ -39,6 +45,7 @@ export default class OAuthService {
     };
 
     revokeToken = (token) => {
+        const {OAuthAccessToken, OAuthRefreshToken} = this.models;
         OAuthAccessToken.findByPrimary(token.accessToken)
             .then(accessToken => accessToken.update({revoked: true}))
             .then(() => OAuthRefreshToken.findByPrimary(token.refreshToken))
@@ -48,6 +55,7 @@ export default class OAuthService {
     };
 
     getAccessToken = async (bearerToken) => {
+        const {OAuthAccessToken} = this.models;
         try {
             const oauthToken = await OAuthAccessToken.findOne({where: {id: bearerToken, revoked: false}})
             return {
@@ -63,6 +71,7 @@ export default class OAuthService {
     };
 
     getRefreshToken = async (bearerToken) => {
+        const {OAuthRefreshToken} = this.models;
         // access_token, access_token_expires_on, client_id, refresh_token, refresh_token_expires_on, user_id
         try {
             const refreshToken = await OAuthRefreshToken.findByPrimary(bearerToken);
@@ -82,6 +91,7 @@ export default class OAuthService {
     };
 
     getClient = async (clientId, clientSecret) => {
+        const {OAuthClient} = this.models;
         try {
             const oauthClient = await OAuthClient.findOne({where: {id: clientId, secret: clientSecret, revoked: false}});
             const grants = [];
@@ -110,6 +120,7 @@ export default class OAuthService {
     };
 
     getUser = async (username, password) => {
+        const {User} = this.models;
         try {
             const user = await User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
             if(bcrypt.compareSync(password, user.password)){
