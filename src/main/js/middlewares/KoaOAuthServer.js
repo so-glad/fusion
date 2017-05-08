@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -16,7 +15,7 @@ import NodeOAuthServer, {
 
 export default class KoaOAuthServer {
 
-    server = null;
+    delegate = null;
     service = null;
 
     constructor(options) {
@@ -25,9 +24,10 @@ export default class KoaOAuthServer {
         //     options.model[fn] = co.wrap(options.model[fn]);
         // }
 
-        this.server = new NodeOAuthServer(options);
+        this.delegate = new NodeOAuthServer(options);
         this.service = options.model;
     }
+
     /**
      * Authentication Middleware.
      *
@@ -39,12 +39,12 @@ export default class KoaOAuthServer {
         const request = new Request(ctx.request);
         try {
             ctx.state.oauth = {
-                token: await this.server.authenticate(request)
+                token: await this.delegate.authenticate(request)
             };
+            await next();
         } catch (e) {
             return this.handleError(e);
         }
-        await next();
     };
 
     /**
@@ -59,7 +59,7 @@ export default class KoaOAuthServer {
         const response = new Response(ctx.response);
         try {
             ctx.state.oauth = {
-                code: await this.server.authorize(request, response)
+                code: await this.delegate.authorize(request, response)
             };
 
             this.handleResponse(response);
@@ -80,7 +80,7 @@ export default class KoaOAuthServer {
         const request = new Request(ctx.request);
         const response = new Response(ctx.response);
         try {
-            const token = await this.server.token(request, response);
+            const token = await this.delegate.token(request, response);
             ctx.state.oauth = {
                 token: token
             };
@@ -92,20 +92,20 @@ export default class KoaOAuthServer {
         await next();
     };
 
-    revokeToken = (token) => {
+    revoke = (token) => {
         this.service.revokeToken(token);
     };
 
     handleResponse = (ctx, response) => {
         ctx.res.statusCode = response.status;
-        for(const header in response.headers){
+        for (const header in response.headers) {
             ctx.res.setHeader(header, response.headers[header]);
         }
     };
 
     handleError = (e, ctx, response) => {
         if (response) {
-            for(const header in response.headers){
+            for (const header in response.headers) {
                 ctx.res.setHeader(header, response.headers[header]);
             }
         }
@@ -113,7 +113,7 @@ export default class KoaOAuthServer {
         if (e instanceof UnauthorizedRequestError) {
             ctx.status = e.code;
         } else {
-            ctx.body = { error: e.name, error_description: e.message };
+            ctx.body = {error: e.name, error_description: e.message};
             ctx.status = e.code;
         }
         return ctx.app.emit('error', e, this);

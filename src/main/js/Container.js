@@ -9,6 +9,7 @@
 
 import log4js from 'koa-log4';
 import Sequelize from 'sequelize';
+import oauth from 'oauth';
 
 import RoleClass from './models/Role';
 import UserClass from './models/User';
@@ -16,10 +17,12 @@ import OAuthClientClass from './models/OAuthClient';
 import OAuthCodeClass from './models/OAuthCode';
 import OAuthAccessTokenClass from './models/OAuthAccessToken';
 import OAuthRefreshTokenClass from './models/OAuthRefreshToken';
+import OAuthProviderClass from './models/OAuthProvider';
+
+import OAuth from './services/OAuthServer';
 
 import OAuthServer from './middlewares/KoaOAuthServer';
-import OAuth from './services/OAuth';
-import KoaAuth from './middlewares/KoaAuth';
+import KoaAuth from './middlewares/KoaAuthBrowser';
 
 import Context from './Context';
 
@@ -61,13 +64,15 @@ const configModels = (databases) => {
     OAuthRefreshTokenClass.addBelongTo(OAuthAccessToken.delegate, 'accessToken', 'access_token_id');
     const OAuthRefreshToken = new OAuthRefreshTokenClass(databases.common, defaultOptions);
 
+    const OAuthProvider = new OAuthProviderClass(databases.common, defaultOptions);
     return {
         Role: Role,
         User: User,
         OAuthClient: OAuthClient,
         OAuthCode: OAuthCode,
         OAuthAccessToken: OAuthAccessToken,
-        OAuthRefreshToken: OAuthRefreshToken
+        OAuthRefreshToken: OAuthRefreshToken,
+        OAuthProvider: OAuthProvider
     };
 };
 
@@ -84,7 +89,8 @@ export default class Container extends Context {
 
         this.register('models', models)
             .register('auth', new KoaAuth(oauthServer))
-            .register('default.client', this.config.client);
+            .register('default.client', this.config.client)
+            .register('client.oauth', oauth);
     }
 }
 

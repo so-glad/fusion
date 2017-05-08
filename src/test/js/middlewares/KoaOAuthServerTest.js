@@ -13,7 +13,7 @@ import session from 'koa-session';
 import Router from 'koa-router';
 
 import RedisStore from '../../../main/js/stores/Redis';
-import OAuth from '../../../main/js/services/OAuth';
+import OAuth from '../../../main/js/services/OAuthServer';
 import OAuthServer from '../../../main/js/middlewares/KoaOAuthServer';
 
 

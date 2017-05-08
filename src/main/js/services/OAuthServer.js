@@ -14,7 +14,7 @@ import log4js from 'koa-log4';
 const logger = log4js.getLogger('fusion');
 
 
-export default class OAuthService {
+export default class OAuthServerService {
 
     models = null;
 
@@ -113,6 +113,16 @@ export default class OAuthService {
                 clientSecret: oauthClient.secret,
                 grants: grants
             };
+        } catch(e) {
+            logger.error(e);
+            return false;
+        }
+    };
+
+    getClientById = async (clientId) => {
+        const {OAuthClient} = this.models;
+        try {
+            return await OAuthClient.findByPrimary(clientId);
         } catch(e) {
             logger.error(e);
             return false;

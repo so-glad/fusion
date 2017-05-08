@@ -10,16 +10,16 @@ import _ from 'lodash';
 import path from 'path';
 
 
-const changePathVars = (config) => {
+const changePathVars = (config, confPath) => {
     for(const key in config) {
-        const value = config[key];
-        if(_.isString(value)) {
-            config[key] = value
-                .replace('${path.client}', config.path.client)
-                .replace('${path.server}', config.path.server)
-                .replace('${path.resources}', config.path.resources);
-        } else if(_.isObject(value)) {
-            changePathVars(config[key], resultConfig[key]);
+        if(_.isString(config[key])) {
+            config[key] = config[key]
+                .replace('${path.root}', confPath.root)
+                .replace('${path.client}', confPath.client)
+                .replace('${path.server}', confPath.server)
+                .replace('${path.resources}', confPath.resources);
+        } else if(_.isObject(config[key])) {
+            config[key] = changePathVars(config[key], confPath);
         }
     }
     return config;
@@ -59,7 +59,7 @@ const refactorPath = (config) => {
             config.path.resources = path.join(config.path.root, config.path.resources);
         }
     }
-    return changePathVars(config);
+    return changePathVars(config, config.path);
 };
 
 export default class Context {
