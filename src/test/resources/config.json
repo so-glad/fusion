@@ -1,19 +1,8 @@
 {
-    "databases": {
-        "common": {
-            "dialect": "postgres",
-            "host": "127.0.0.1",
-            "port": 5432,
-            "name": "common",
-            "username": "soglad",
-            "password": "soglad"
-        },
-        "redis": {
-            "host": "172.17.0.1",
-            "port": 6379,
-            "password": "redis",
-            "db": 0
-        }
+    "path": {
+        "server": "src/test/js",
+        "resources": "src/test/resources",
+        "client": "src/test/web"
     },
     "log4js": {
         "cwd": "var/logs",
@@ -33,5 +22,28 @@
                 "alwaysIncludePattern": false
             }
         ]
+    },
+    "session": {
+        "store": "redis:1",
+        "key": "fusion",
+        "maxAge": 86400000,
+        "overwrite": true,
+        "httpOnly": true,
+        "signed": true
+    },
+    "databases": {
+        "common": {
+            "dialect": "postgres",
+            "host": "127.0.0.1",
+            "port": 5432,
+            "name": "common",
+            "username": "soglad",
+            "password": "soglad"
+        },
+        "redis": {
+            "host": "172.17.0.1",
+            "port": 6379,
+            "password": "redis"
+        }
     }
 }

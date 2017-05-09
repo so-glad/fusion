@@ -4,7 +4,33 @@
         "resources": "src/main/resources",
         "client": "src/main/web"
     },
-
+    "log4js": {
+        "cwd": "var/logs",
+        "appenders": [
+            {
+                "category": "fusion",
+                "type": "dateFile",
+                "filename": "fusion.log",
+                "pattern": "-yyyy-MM-dd",
+                "alwaysIncludePattern": false
+            },
+            {
+                "category": "fusion-db",
+                "type": "dateFile",
+                "filename": "fusion-db.log",
+                "pattern": "-yyyy-MM-dd",
+                "alwaysIncludePattern": false
+            }
+        ]
+    },
+    "session": {
+        "key": "fusion",
+        "maxAge": 86400000,
+        "overwrite": true,
+        "httpOnly": true,
+        "signed": true,
+        "store": "redis:1"
+    },
     "databases": {
         "common": {
             "dialect": "postgres",
@@ -25,29 +51,7 @@
         "redis": {
             "host": "172.17.0.1",
             "port": 6379,
-            "password": "redis",
-            "db": 0
+            "password": "redis"
         }
-    },
-
-    "log4js": {
-        "cwd": "var/logs",
-        "appenders": [
-            {
-                "category": "fusion",
-                "type": "dateFile",
-                "filename": "fusion.log",
-                "pattern": "-yyyy-MM-dd",
-                "alwaysIncludePattern": false
-            },
-            {
-                "category": "fusion-db",
-                "type": "dateFile",
-                "filename": "fusion-db.log",
-                "pattern": "-yyyy-MM-dd",
-                "alwaysIncludePattern": false
-            }
-        ]
-    },
-
+    }
 }

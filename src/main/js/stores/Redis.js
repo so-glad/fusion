@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -21,18 +20,18 @@ export default class RedisStore extends EventEmitter {
         options = options || {};
 
         let client = null;
-        options.auth_pass = options.auth_pass || options.pass || null;     // For backwards compatibility
-        options.path = options.path || options.socket || null;             // For backwards compatibility
+        options.auth_pass = options.auth_pass || options.pass || null;
+        options.path = options.path || options.socket || null;
         if (!options.client) {
             debug('Init redis new client');
             client = redis.createClient(options);
         } else {
-            if (options.duplicate) {                                         // Duplicate client and update with options provided
+            if (options.duplicate) {
                 debug('Duplicating provided client with new options (if provided)');
                 const dupClient = options.client;
                 delete options.client;
                 delete options.duplicate;
-                client = dupClient.duplicate(options);                         // Useful if you want to use the DB option without adjusting the client DB outside koa-redis
+                client = dupClient.duplicate(options);
             } else {
                 debug('Using provided client');
                 client = options.client;
@@ -51,7 +50,7 @@ export default class RedisStore extends EventEmitter {
 
         client.on('error', this.emit.bind(this, 'error'));
         client.on('end', this.emit.bind(this, 'end'));
-        client.on('end', this.emit.bind(this, 'disconnect'));              // For backwards compatibility
+        client.on('end', this.emit.bind(this, 'disconnect'));
         client.on('connect', this.emit.bind(this, 'connect'));
         client.on('reconnecting', this.emit.bind(this, 'reconnecting'));
         client.on('ready', this.emit.bind(this, 'ready'));

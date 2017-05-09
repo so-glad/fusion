@@ -1,5 +1,5 @@
 {
-    "name": "fusion",
+    "name": "@soglad/fusion",
     "version": "1.0.0",
     "description": "A framework for user authorization and authentication, principle like simov/grant or jaredhanson/passport, but also including server schema adjust refered from oauthjs/koa-oauth-server,  powered by oauth2, javascript",
     "main": "lib/index.js",
@@ -55,5 +55,8 @@
         "oauth": "^0.9.15",
         "oauth2-server": "^3.0.0-b4",
         "sequelize": "^3.30.4"
+    },
+    "publishConfig" : {
+        "registry" : "https://pub.glad.so/repository/sonpm-snapshot/"
     }
 }

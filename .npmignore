@@ -6,4 +6,10 @@
 .sublime
 
 src
+var
+
+.babelrc
+.eslintrc
+.gitignore
+
 node_modules

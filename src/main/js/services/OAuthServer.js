@@ -1,11 +1,10 @@
-
 'use strict';
 
 /**
  * @author palmtale
  * @since 2017/5/3.
  */
- 
+
 
 import bcrypt from 'bcrypt';
 import log4js from 'koa-log4';
@@ -13,6 +12,25 @@ import log4js from 'koa-log4';
 
 const logger = log4js.getLogger('fusion');
 
+const grantTypes = (value) => {
+    const grants = [];
+    if ((1 & value) === 1) {
+        grants.push('authorization_code');
+    }
+    if ((2 & value) === 2) {
+        grants.push('password');
+    }
+    if ((4 & value) === 4) {
+        grants.push('client_credentials');
+    }
+    if ((8 & value) === 8) {
+        grants.push('implicit');
+    }
+    if ((16 & value) === 8) {
+        grants.push('refresh_token');
+    }
+    return grants;
+};
 
 export default class OAuthServerService {
 
@@ -24,19 +42,28 @@ export default class OAuthServerService {
 
     saveToken = (token, client, user) => {
         const {OAuthAccessToken, OAuthRefreshToken} = this.models;
-        const accessToken = {id: token.accessToken, expiresAt: token.accessTokenExpiresAt, user_id: user.id, client_id: client.clientId};
+        const accessToken = {
+            id: token.accessToken,
+            expiresAt: token.accessTokenExpiresAt,
+            user_id: user.id,
+            client_id: client.clientId
+        };
         OAuthAccessToken.create(accessToken)
             .then(savedToken => {
                 logger.info('Saved access token [' + savedToken.id + '] for client[' + client.clientId + '], user[ ' + user.id + ' ].');
-                if(token.refreshToken) {
-                    const refreshToken = {id: token.refreshToken, expiresAt: token.refreshTokenExpiresAt, access_token_id: token.accessToken};
+                if (token.refreshToken) {
+                    const refreshToken = {
+                        id: token.refreshToken,
+                        expiresAt: token.refreshTokenExpiresAt,
+                        access_token_id: token.accessToken
+                    };
                     return OAuthRefreshToken.create(refreshToken);
                 }
-            return null;
-        }).then(savedRefreshToken => {
-                if(savedRefreshToken){
-                    logger.info('Saved refresh token [' + savedRefreshToken.id + '] for access token [' + token.accessToken + '].');
-                }
+                return null;
+            }).then(savedRefreshToken => {
+            if (savedRefreshToken) {
+                logger.info('Saved refresh token [' + savedRefreshToken.id + '] for access token [' + token.accessToken + '].');
+            }
         }).catch(e => logger.error(e));
 
         token.client = client;
@@ -57,14 +84,14 @@ export default class OAuthServerService {
     getAccessToken = async (bearerToken) => {
         const {OAuthAccessToken} = this.models;
         try {
-            const oauthToken = await OAuthAccessToken.findOne({where: {id: bearerToken, revoked: false}})
+            const oauthToken = await OAuthAccessToken.findOne({where: {id: bearerToken, revoked: false}});
             return {
                 accessToken: oauthToken.access_token,
                 clientId: oauthToken.client_id,
                 expires: oauthToken.expiresAt,
                 userId: oauthToken.user_id
             }
-        } catch(e) {
+        } catch (e) {
             logger.error(e);
             return false;
         }
@@ -84,7 +111,7 @@ export default class OAuthServerService {
                 refreshToken: bearerToken,
                 refreshTokenExpiresAt: refreshToken.expires_at,
             }
-        } catch(e) {
+        } catch (e) {
             logger.error(e);
             return false;
         }
@@ -93,27 +120,20 @@ export default class OAuthServerService {
     getClient = async (clientId, clientSecret) => {
         const {OAuthClient} = this.models;
         try {
-            const oauthClient = await OAuthClient.findOne({where: {id: clientId, secret: clientSecret, revoked: false}});
-            const grants = [];
-            if((1 & oauthClient.grantTypes) === 1) {
-                grants.push('password');
-            }
-            if((2 & oauthClient.grantTypes) === 2) {
-                grants.push('client_credentials');
-            }
-            if((4 & oauthClient.grantTypes) === 4) {
-                grants.push('refresh_token');
-            }
-            if((8 & oauthClient.grantTypes) === 8) {
-                grants.push('authorization_code');
-            }
+            const oauthClient = await OAuthClient.findOne({
+                where: {
+                    id: clientId,
+                    secret: clientSecret,
+                    revoked: false
+                }
+            });
             return {
                 id: oauthClient.id,
                 clientId: oauthClient.id,
                 clientSecret: oauthClient.secret,
-                grants: grants
+                grants: grantTypes(oauthClient.grantTypes)
             };
-        } catch(e) {
+        } catch (e) {
             logger.error(e);
             return false;
         }
@@ -122,8 +142,10 @@ export default class OAuthServerService {
     getClientById = async (clientId) => {
         const {OAuthClient} = this.models;
         try {
-            return await OAuthClient.findByPrimary(clientId);
-        } catch(e) {
+            const client = await OAuthClient.findByPrimary(clientId);
+            client.grantTypes = grantTypes(client.grantTypes);
+            return client;
+        } catch (e) {
             logger.error(e);
             return false;
         }
@@ -133,11 +155,11 @@ export default class OAuthServerService {
         const {User} = this.models;
         try {
             const user = await User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
-            if(bcrypt.compareSync(password, user.password)){
+            if (bcrypt.compareSync(password, user.password)) {
                 return user;
             }
             return false;
-        } catch(e) {
+        } catch (e) {
             logger.error(e);
             return false;
         }

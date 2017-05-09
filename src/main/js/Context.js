@@ -9,6 +9,8 @@
 import _ from 'lodash';
 import path from 'path';
 
+import RedisStore from "./stores/Redis";
+
 
 const changePathVars = (config, confPath) => {
     for(const key in config) {
@@ -62,6 +64,20 @@ const refactorPath = (config) => {
     return changePathVars(config, config.path);
 };
 
+const configSession = (config) => {
+    const redisBasic = config.databases.redis;
+
+    if(config.session.store.indexOf('redis') === 0) {
+        const sessionRedis = _.clone(redisBasic);
+        if(config.session.store.length >= 7) {
+            sessionRedis.db = config.session.store.substring(6);
+        } else {
+            sessionRedis.db = 0;
+        }
+        config.session.store = new RedisStore(sessionRedis);
+    }
+};
+
 export default class Context {
 
     config = null;
@@ -71,6 +87,7 @@ export default class Context {
     constructor(config) {
         this.config = _.cloneDeep(config);
         this.config = refactorPath(this.config);
+        configSession(this.config);
     }
 
     module(name, module) {

@@ -26,7 +26,7 @@ router.post('/oauth/token', async(ctx, next) => {
 
 } );
 
-app.keys = ['fusion'];
+app.keys = ['fusion', 'remember'];
 app.use(bodyParser());
 app.use(session({
     store: new RedisStore({
