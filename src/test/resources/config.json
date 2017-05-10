@@ -38,10 +38,11 @@
             "port": 5432,
             "name": "common",
             "username": "soglad",
-            "password": "soglad"
+            "password": "soglad",
+            "logging": "test-db"
         },
         "redis": {
-            "host": "172.17.0.1",
+            "host": "127.0.0.1",
             "port": 6379,
             "password": "redis"
         }

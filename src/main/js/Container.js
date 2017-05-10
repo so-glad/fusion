@@ -9,8 +9,8 @@
 
 import log4js from 'koa-log4';
 import Sequelize from 'sequelize';
-import oauth from 'oauth';
-
+// import oauth from 'oauth';
+//Models classes
 import RoleClass from './models/Role';
 import UserClass from './models/User';
 import OAuthClientClass from './models/OAuthClient';
@@ -18,53 +18,63 @@ import OAuthCodeClass from './models/OAuthCode';
 import OAuthAccessTokenClass from './models/OAuthAccessToken';
 import OAuthRefreshTokenClass from './models/OAuthRefreshToken';
 import OAuthProviderClass from './models/OAuthProvider';
+import UserAgentClass from './models/UserAgent';
 
-import OAuth from './services/OAuthServer';
+import OAuthServerService from './services/OAuthServer';
 
-import OAuthServer from './middlewares/KoaOAuthServer';
-import KoaAuth from './middlewares/KoaAuthBrowser';
+import KoaOAuthServer from './middlewares/KoaOAuthServer';
+import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
 
+import KoaUserAgent from "./middlewares/KoaUserAgent";
 import Context from './Context';
 
+
 const configDatabase = (databases) => {
-    const dbLogger = log4js.getLogger('fusion-db');
-    const common = new Sequelize(databases.common.name,
-        databases.common.username, databases.common.password, {
-            dialect: databases.common.dialect,
-            host: databases.common.host,
-            port: databases.common.port,
-            pool: {
-                max: 8,
-                min: 3,
-                idle: 10000
-            },
-            logging: msg => dbLogger.info.apply(dbLogger, [msg])
-        });
-    return {common: common};
+    const result = {};
+    for (const database in databases){
+        const dataConfig = databases[database];
+        if(dataConfig.dialect !== 'postgres' && dataConfig.dialect !== 'mysql') {
+            continue;
+        }
+        const dbLogger = log4js.getLogger(dataConfig.logging);
+        result[database] = new Sequelize(dataConfig.name,
+            dataConfig.username, dataConfig.password, {
+                dialect: dataConfig.dialect,
+                host: dataConfig.host,
+                port: dataConfig.port,
+                pool: {
+                    max: 8,
+                    min: 3,
+                    idle: 10000
+                },
+                logging: msg => dbLogger.info.apply(dbLogger, [msg])
+            });
+        result[database].logger = dbLogger;
+    }
+    return result;
 };
 
 const configModels = (databases) => {
-    const defaultOptions = {logger: log4js.getLogger('fusion-db')};
-
-    const Role = new RoleClass(databases.common, defaultOptions);
+    const Role = new RoleClass(databases.common, {});
 
     UserClass.addBelongTo(Role.delegate, 'role', 'role_id');
-    const User = new UserClass(databases.common, defaultOptions);
-
+    const User = new UserClass(databases.common, {});
+    const UserAgent = new UserAgentClass(databases.common, {});
     OAuthClientClass.addBelongTo(User.delegate, 'user', 'user_id');
-    const OAuthClient = new OAuthClientClass(databases.common, defaultOptions);
+    const OAuthClient = new OAuthClientClass(databases.common, {});
 
     OAuthCodeClass.addBelongTo(User.delegate, 'user', 'user_id');
     OAuthCodeClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
-    const OAuthCode = new OAuthCodeClass(databases.common, defaultOptions);
+    const OAuthCode = new OAuthCodeClass(databases.common, {});
 
     OAuthAccessTokenClass.addBelongTo(User.delegate, 'user', 'user_id');
     OAuthAccessTokenClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
-    const OAuthAccessToken = new OAuthAccessTokenClass(databases.common, defaultOptions);
+    const OAuthAccessToken = new OAuthAccessTokenClass(databases.common, {});
     OAuthRefreshTokenClass.addBelongTo(OAuthAccessToken.delegate, 'accessToken', 'access_token_id');
-    const OAuthRefreshToken = new OAuthRefreshTokenClass(databases.common, defaultOptions);
+    const OAuthRefreshToken = new OAuthRefreshTokenClass(databases.common, {});
 
-    const OAuthProvider = new OAuthProviderClass(databases.common, defaultOptions);
+    const OAuthProvider = new OAuthProviderClass(databases.common, {});
+
     return {
         Role: Role,
         User: User,
@@ -72,7 +82,8 @@ const configModels = (databases) => {
         OAuthCode: OAuthCode,
         OAuthAccessToken: OAuthAccessToken,
         OAuthRefreshToken: OAuthRefreshToken,
-        OAuthProvider: OAuthProvider
+        OAuthProvider: OAuthProvider,
+        UserAgent: UserAgent
     };
 };
 
@@ -80,17 +91,21 @@ export default class Container extends Context {
     constructor(config){
         super(config);
         log4js.configure(this.config.log4js, {cwd: this.config.log4js.cwd});
+        const defaultLogging = this.config.log4js.appenders[0].category;
         const databases = configDatabase(this.config.databases);
         const models = configModels(databases);
-        const oauthServer = new OAuthServer({
+        const oauthServer = new KoaOAuthServer({
             debug: false,
-            model: new OAuth(models)
+            model: new OAuthServerService(models, defaultLogging)
         });
 
-        this.register('models', models)
-            .register('auth', new KoaAuth(oauthServer))
-            .register('default.client', this.config.client)
-            .register('client.oauth', oauth);
+        this.register('default.client', this.config.client)
+            .register('models', models)
+            // .register('output.oauth', oauth)
+            // .register('service')
+            .register('input.agent', new KoaUserAgent(models, defaultLogging))
+            .register('api.auth', oauthServer)
+            .register('web.auth', new KoaBrowserAuth(this));
     }
 }
 

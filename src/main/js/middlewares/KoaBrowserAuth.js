@@ -6,33 +6,25 @@
  * @since 2017/5/5.
  */
 
-import _ from 'lodash';
+export default class KoaBrowserAuth {
 
-const filterUser = (oriUser) => {
-    const user = _.clone(oriUser);
-    delete user.password;
-    delete user.salt;
-    delete user.emailVerified;
-    delete user.mobileVerified;
-    return user;
-};
+    apiAuth = null;
 
-const filterClient = (oriClient) => {
-    return _.cloneDeep(oriClient);
-};
+    oauthService = null;
 
-export default class KoaAuth {
+    defaultClient = null;
 
-    oauthClient = null;
-
-    oauthServer = null;
-
-    constructor(oauthServer) {
-        this.oauthServer = oauthServer;
+    constructor(container) {
+        this.apiAuth = container.module('api.auth');
+        // this.oauthService = this.apiAuth.oauthService;
+        this.defaultClient = container.module('default.client');
     }
     //OAuth Server actions group
     login = async (ctx, next) => {
-        await this.oauthServer.token(ctx, async () => {
+        ctx.request.body.grant_type = 'password';
+        ctx.request.body.client_id = this.defaultClient.clientId;
+        ctx.request.body.client_secret = this.defaultClient.clientSecret;
+        await this.apiAuth.token(ctx, async () => {
             if(!ctx.state.oauth) {
                 await next();
                 return;
@@ -40,8 +32,8 @@ export default class KoaAuth {
             if(ctx.regenerateSession) {
                 await ctx.regenerateSession();
             }
-            ctx.session.client = filterClient(ctx.state.oauth.token.client);
-            ctx.session.user = filterUser(ctx.state.oauth.token.user);
+            ctx.session.client = ctx.state.oauth.client;
+            ctx.session.user = ctx.state.oauth.user;
             await next();
         });
     };
@@ -50,12 +42,12 @@ export default class KoaAuth {
         if(ctx.session.user && ctx.session.client) {
             await next();
         } else {
-            await this.oauthServer.authenticate(ctx, next);
+            await this.apiAuth.authenticate(ctx, next);
         }
     };
 
     logout = async (ctx, next) => {
-        this.oauthServer.revoke(ctx.session.auth);
+        this.apiAuth.revoke(ctx.session.auth);
         ctx.session = null;
         await next();
     };
@@ -66,7 +58,7 @@ export default class KoaAuth {
 
     //OAuth client actions group
     redirectAuthorizeUrl = async (ctx, next) => {
-        this.oauthClient.redirect();
+        this.oauthService.redirect();
     };
 
     callbackAuthorizeCode = async (ctx, next) => {

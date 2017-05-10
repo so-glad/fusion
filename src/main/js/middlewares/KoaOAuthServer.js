@@ -5,7 +5,6 @@
  * @since 2017/5/2.
  */
 
-
 import NodeOAuthServer, {
     Request,
     Response,
@@ -43,7 +42,7 @@ export default class KoaOAuthServer {
             };
             await next();
         } catch (e) {
-            return this.handleError(e);
+            this.handleError(e);
         }
     };
 
@@ -63,10 +62,10 @@ export default class KoaOAuthServer {
             };
 
             this.handleResponse(response);
+            await next();
         } catch (e) {
-            return this.handleError(e, response);
+            this.handleError(e, response);
         }
-        await next();
     };
 
     /**
@@ -77,19 +76,26 @@ export default class KoaOAuthServer {
      * (See: https://tools.ietf.org/html/rfc6749#section-3.2)
      */
     token = async (ctx, next) => {
-        const request = new Request(ctx.request);
-        const response = new Response(ctx.response);
         try {
+            const request = new Request(ctx.request);
+            const response = new Response(ctx.res);
             const token = await this.delegate.token(request, response);
+            const user = token.user;
+            const client = token.client;
+            delete token.user;
+            delete token.client;
             ctx.state.oauth = {
-                token: token
+                token: token,
+                user: user,
+                client: client
             };
-
             this.handleResponse(ctx, response);
+            await next();
         } catch (e) {
-            return this.handleError(e, response);
+            console.error(e);
+            this.handleError(e, response);
         }
-        await next();
+
     };
 
     revoke = (token) => {
@@ -97,9 +103,9 @@ export default class KoaOAuthServer {
     };
 
     handleResponse = (ctx, response) => {
-        ctx.res.statusCode = response.status;
+        ctx.response.status = response.status;
         for (const header in response.headers) {
-            ctx.res.setHeader(header, response.headers[header]);
+            ctx.response.header[header] = response.headers[header];
         }
     };
 

@@ -34,7 +34,7 @@ export default class ModelClass {
             }
         }
 
-        this.logger = options.logger ? options.logger : this.logger;
+        this.logger = options.logger ? options.logger : provider.logger ? provider.logger : this.logger;
         delete options.logger;
 
         this.delegate = this.provider.define(this.name, this.fieldsDefine, options);
@@ -48,7 +48,7 @@ export default class ModelClass {
 
         this.delegate.sync({force: false})
             .then(() => {
-                this.logger.trace("Connected table " + options.tableName);
+                this.logger.info("Connected table " + options.tableName);
             }).catch((e) => {
                 this.logger.error("Error while connecting table " + options.tableName + ", cause: " + e.message);
             }

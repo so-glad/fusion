@@ -70,7 +70,7 @@ const configSession = (config) => {
     if(config.session.store.indexOf('redis') === 0) {
         const sessionRedis = _.clone(redisBasic);
         if(config.session.store.length >= 7) {
-            sessionRedis.db = config.session.store.substring(6);
+            sessionRedis.db = parseInt(config.session.store.substring(6));
         } else {
             sessionRedis.db = 0;
         }

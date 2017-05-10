@@ -4,6 +4,10 @@
         "resources": "src/main/resources",
         "client": "src/main/web"
     },
+    "client": {
+        "clientId": "10000001",
+        "clientSecret": "Qxcnjb7dLoELoJ628f3Omc76OyXiZAjsDNJ2EyYy"
+    },
     "log4js": {
         "cwd": "var/logs",
         "appenders": [
@@ -38,7 +42,8 @@
             "port": 5432,
             "name": "common",
             "username": "soglad",
-            "password": "soglad"
+            "password": "soglad",
+            "logging": "fusion-db"
         },
         "fusion": {
             "dialect": "postgres",
@@ -46,7 +51,8 @@
             "port": 5432,
             "name": "fusion",
             "username": "soglad",
-            "password": "soglad"
+            "password": "soglad",
+            "logging": "fusion-db"
         },
         "redis": {
             "host": "172.17.0.1",

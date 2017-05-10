@@ -10,8 +10,6 @@ import bcrypt from 'bcrypt';
 import log4js from 'koa-log4';
 
 
-const logger = log4js.getLogger('fusion');
-
 const grantTypes = (value) => {
     const grants = [];
     if ((1 & value) === 1) {
@@ -35,9 +33,11 @@ const grantTypes = (value) => {
 export default class OAuthServerService {
 
     models = null;
+    logger = console;
 
-    constructor(models) {
+    constructor(models, logging) {
         this.models = models;
+        this.logger = logging ? log4js.getLogger(logging) : this.logger;
     }
 
     saveToken = (token, client, user) => {
@@ -50,7 +50,7 @@ export default class OAuthServerService {
         };
         OAuthAccessToken.create(accessToken)
             .then(savedToken => {
-                logger.info('Saved access token [' + savedToken.id + '] for client[' + client.clientId + '], user[ ' + user.id + ' ].');
+                this.logger.info('Saved access token [' + savedToken.id + '] for client[' + client.clientId + '], user[ ' + user.id + ' ].');
                 if (token.refreshToken) {
                     const refreshToken = {
                         id: token.refreshToken,
@@ -62,9 +62,9 @@ export default class OAuthServerService {
                 return null;
             }).then(savedRefreshToken => {
             if (savedRefreshToken) {
-                logger.info('Saved refresh token [' + savedRefreshToken.id + '] for access token [' + token.accessToken + '].');
+                this.logger.info('Saved refresh token [' + savedRefreshToken.id + '] for access token [' + token.accessToken + '].');
             }
-        }).catch(e => logger.error(e));
+        }).catch(e => this.logger.error(e));
 
         token.client = client;
         token.user = user;
@@ -77,7 +77,7 @@ export default class OAuthServerService {
             .then(accessToken => accessToken.update({revoked: true}))
             .then(() => OAuthRefreshToken.findByPrimary(token.refreshToken))
             .then(refreshToken => refreshToken.update({revoked: true}))
-            .catch(e => logger.error(e));
+            .catch(e => this.logger.error(e));
         return token;
     };
 
@@ -92,7 +92,7 @@ export default class OAuthServerService {
                 userId: oauthToken.user_id
             }
         } catch (e) {
-            logger.error(e);
+            this.logger.error(e);
             return false;
         }
     };
@@ -112,7 +112,7 @@ export default class OAuthServerService {
                 refreshTokenExpiresAt: refreshToken.expires_at,
             }
         } catch (e) {
-            logger.error(e);
+            this.logger.error(e);
             return false;
         }
     };
@@ -134,7 +134,7 @@ export default class OAuthServerService {
                 grants: grantTypes(oauthClient.grantTypes)
             };
         } catch (e) {
-            logger.error(e);
+            this.logger.error(e);
             return false;
         }
     };
@@ -144,9 +144,14 @@ export default class OAuthServerService {
         try {
             const client = await OAuthClient.findByPrimary(clientId);
             client.grantTypes = grantTypes(client.grantTypes);
-            return client;
+            return {
+                id: client.id,
+                clientId: client.id,
+                clientSecret: client.secret,
+                grants: grantTypes(client.grantTypes)
+            };
         } catch (e) {
-            logger.error(e);
+            this.logger.error(e);
             return false;
         }
     };
@@ -156,11 +161,21 @@ export default class OAuthServerService {
         try {
             const user = await User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
             if (bcrypt.compareSync(password, user.password)) {
-                return user;
+                return  {
+                    id: user.id,
+                    username: user.username,
+                    alias: user.alias,
+                    avatar: user.avatar,
+                    email: user.email,
+                    mobile: user.mobile,
+                    rememberToken: user.rememberToken,
+                    createdAt: user.created_at,
+                    updatedAt: user.updated_at
+                }
             }
             return false;
         } catch (e) {
-            logger.error(e);
+            this.logger.error(e);
             return false;
         }
     };
