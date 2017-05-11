@@ -1,36 +1,33 @@
-
 'use strict';
 
 /**
  * @author palmtale
  * @since 2017/5/3.
  */
- 
- 
+
+
 import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
 import session from 'koa-session';
 import Router from 'koa-router';
 
 import RedisStore from '../../../main/js/stores/Redis';
-import OAuth from '../../../main/js/services/OAuthServer';
-import OAuthServer from '../../../main/js/middlewares/KoaOAuthServer';
 
 
 const app = new Koa();
 const router = new Router();
 const oauthServer =
 
-router.get('/oauth/auth', oauthServer.authorize);
-router.post('/oauth/token', async(ctx, next) => {
+    router.get('/oauth/auth', oauthServer.authorize);
+router.post('/oauth/token', async () => {
 
-} );
+});
 
 app.keys = ['fusion', 'remember'];
 app.use(bodyParser());
 app.use(session({
     store: new RedisStore({
-        db:2
+        db: 2
     }),
     key: 'fusion', /** (string) cookie key (default is koa:sess) */
     maxAge: 86400000, /** (number) maxAge in ms (default is 1 days) */

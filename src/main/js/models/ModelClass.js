@@ -7,18 +7,26 @@
 
 import _ from 'lodash';
 
- 
+
 export default class ModelClass {
 
     logger = console;
 
-    get name() {return null};
+    get name() {
+        return null;
+    }
 
-    get fieldsDefine() {return {}};
+    get fieldsDefine() {
+        return {};
+    }
 
-    get belongsToDefine() {return []};
+    get belongsToDefine() {
+        return [];
+    }
 
-    get defaultOptions() {return {}};
+    get defaultOptions() {
+        return {};
+    }
 
     provider = null;
 
@@ -28,8 +36,8 @@ export default class ModelClass {
         options = _.cloneDeep(options);
         this.provider = provider;
 
-        for(const option in this.defaultOptions) {
-            if(!options[option]){
+        for (const option in this.defaultOptions) {
+            if (!options[option]) {
                 options[option] = this.defaultOptions[option];
             }
         }
@@ -39,8 +47,8 @@ export default class ModelClass {
 
         this.delegate = this.provider.define(this.name, this.fieldsDefine, options);
 
-        if(this.belongsToDefine.length > 0){
-            for (const index in this.belongsToDefine){
+        if (this.belongsToDefine.length > 0) {
+            for (const index in this.belongsToDefine) {
                 const belongTo = this.belongsToDefine[index];
                 this.delegate.belongsTo(belongTo.type, {as: belongTo.as, foreignKey: belongTo.foreignKey});
             }
@@ -48,15 +56,17 @@ export default class ModelClass {
 
         this.delegate.sync({force: false})
             .then(() => {
-                this.logger.info("Connected table " + options.tableName);
+                this.logger.info('Connected table ' + options.tableName);
             }).catch((e) => {
-                this.logger.error("Error while connecting table " + options.tableName + ", cause: " + e.message);
+                this.logger.error('Error while connecting table ' + options.tableName + ', cause: ' + e.message);
             }
         );
 
         for (const fn in this.delegate) {
-            if(this.delegate[fn] instanceof Function){
-                this[fn] = (...args) => {return this.delegate[fn](...args);};
+            if (this.delegate[fn] instanceof Function) {
+                this[fn] = (...args) => {
+                    return this.delegate[fn](...args);
+                };
             }
         }
     }

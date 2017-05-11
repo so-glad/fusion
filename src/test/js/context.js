@@ -1,11 +1,10 @@
-
 'use strict';
 
 /**
  * @author palmtale
  * @since 2017/5/3.
  */
- 
+
 
 import Sequelize from 'sequelize';
 import log4js from 'koa-log4';

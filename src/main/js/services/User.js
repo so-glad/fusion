@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -22,7 +21,7 @@ export default class UserService {
         const User = this.userModel;
         try {
             return await User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
-        } catch(e) {
+        } catch (e) {
             logger.error(e);
             return false;
         }

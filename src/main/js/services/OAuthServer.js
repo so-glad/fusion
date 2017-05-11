@@ -61,10 +61,10 @@ export default class OAuthServerService {
                 }
                 return null;
             }).then(savedRefreshToken => {
-            if (savedRefreshToken) {
-                this.logger.info('Saved refresh token [' + savedRefreshToken.id + '] for access token [' + token.accessToken + '].');
-            }
-        }).catch(e => this.logger.error(e));
+                if (savedRefreshToken) {
+                    this.logger.info('Saved refresh token [' + savedRefreshToken.id + '] for access token [' + token.accessToken + '].');
+                }
+            }).catch(e => this.logger.error(e));
 
         token.client = client;
         token.user = user;
@@ -90,7 +90,7 @@ export default class OAuthServerService {
                 clientId: oauthToken.client_id,
                 expires: oauthToken.expiresAt,
                 userId: oauthToken.user_id
-            }
+            };
         } catch (e) {
             this.logger.error(e);
             return false;
@@ -110,7 +110,7 @@ export default class OAuthServerService {
                 user: await accessToken.getUser(),
                 refreshToken: bearerToken,
                 refreshTokenExpiresAt: refreshToken.expires_at,
-            }
+            };
         } catch (e) {
             this.logger.error(e);
             return false;
@@ -161,7 +161,7 @@ export default class OAuthServerService {
         try {
             const user = await User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
             if (bcrypt.compareSync(password, user.password)) {
-                return  {
+                return {
                     id: user.id,
                     username: user.username,
                     alias: user.alias,
@@ -171,7 +171,7 @@ export default class OAuthServerService {
                     rememberToken: user.rememberToken,
                     createdAt: user.created_at,
                     updatedAt: user.updated_at
-                }
+                };
             }
             return false;
         } catch (e) {

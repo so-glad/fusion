@@ -1,11 +1,10 @@
-
 'use strict';
 
 /**
  * @author palmtale
  * @since 2017/5/5.
  */
- 
+
 
 import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
@@ -24,10 +23,10 @@ const app = new Koa();
 const router = new Router();
 app.keys = ['fusion'];
 app.use(bodyParser());
-app.use(container.module('agent').each);
+app.use(container.module('input.agent').each);
 app.use(session(container.config.session, app));
 
-router.get('/session/test', async (ctx, next) => {
+router.get('/session/test', async (ctx) => {
     ctx.session.test = ctx.session.test ? ctx.session.test + 1 : 1;
     console.info(ctx.session.test);
 });

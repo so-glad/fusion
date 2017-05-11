@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -13,7 +12,9 @@ import ModelClass from './ModelClass';
 
 export default class RoleClass extends ModelClass {
 
-    get name() {return 'role'};
+    get name() {
+        return 'role';
+    }
 
     get fieldsDefine() {
         return {

@@ -38,12 +38,12 @@ describe('Role model test', () => {
                 return role.update({name: 'Updated Role'});
             }).then(role => {
                 role.name.should.equal('Updated Role');
-            })
+            });
     });
 
     it('Retrieve and delete role', () => {
         return Role.findOne({where: {code: 'SMR'}})
             .then(role => role.destroy())
-            .then(result => result.length.should.equal(0))
+            .then(result => result.length.should.equal(0));
     });
 });

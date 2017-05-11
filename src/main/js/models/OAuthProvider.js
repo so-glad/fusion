@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -67,8 +66,8 @@ export default class OAuthProvider extends ModelClass {
                 type: Sequelize.STRING,
                 field: 'token_url'
             }
-        }
-    };
+        };
+    }
 
     constructor(provider, options) {
         super(provider, options);

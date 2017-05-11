@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -17,14 +16,16 @@ export default class UserClass extends ModelClass {
     static belongsToDefines = [];
 
     static addBelongTo = (type, as, foreignKey) => {
-        UserClass.belongsToDefines.push({type: type, as:as, foreignKey:foreignKey})
+        UserClass.belongsToDefines.push({type: type, as: as, foreignKey: foreignKey})
     };
 
-    get name() {return 'user'};
+    get name() {
+        return 'user';
+    }
 
     get belongsToDefine() {
         return UserClass.belongsToDefines;
-    };
+    }
 
     get defaultOptions() {
         return {
@@ -106,10 +107,10 @@ export default class UserClass extends ModelClass {
                 field: 'remember_token',
                 default: ''
             }
-        }
-    };
+        };
+    }
 
     constructor(provider, options) {
-        super(provider, options)
+        super(provider, options);
     }
-};
+}

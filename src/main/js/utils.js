@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -11,7 +10,7 @@ import _ from 'lodash';
 module.exports = {
     promisefy: (instance, method) => {
         let methodImpl = method;
-        if(_.isString(method)) {
+        if (_.isString(method)) {
             methodImpl = instance[method];
         }
 
@@ -21,7 +20,7 @@ module.exports = {
                 args.push((err, result) => {
                     if (err) {
                         reject(err);
-                    } else{
+                    } else {
                         resolve(result);
                     }
                 });

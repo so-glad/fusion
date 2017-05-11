@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -19,24 +18,23 @@ import OAuthAccessTokenClass from './models/OAuthAccessToken';
 import OAuthRefreshTokenClass from './models/OAuthRefreshToken';
 import OAuthProviderClass from './models/OAuthProvider';
 import UserAgentClass from './models/UserAgent';
-
+//Services
 import OAuthServerService from './services/OAuthServer';
-import OAuthProviderService from "./services/OAuthProvider";
-
+import OAuthProviderService from './services/OAuthProvider';
+//Server Middleware
 import KoaOAuthServer from './middlewares/KoaOAuthServer';
-import KoaOAuthClient from "./middlewares/KoaOAuthClient";
+import KoaOAuthClient from './middlewares/KoaOAuthClient';
 import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
-
-import KoaUserAgent from "./middlewares/KoaUserAgent";
+//Extra
+import KoaUserAgent from './middlewares/KoaUserAgent';
 import Context from './Context';
-
 
 
 const configDatabase = (databases) => {
     const result = {};
-    for (const database in databases){
+    for (const database in databases) {
         const dataConfig = databases[database];
-        if(dataConfig.dialect !== 'postgres' && dataConfig.dialect !== 'mysql') {
+        if (dataConfig.dialect !== 'postgres' && dataConfig.dialect !== 'mysql') {
             continue;
         }
         const dbLogger = log4js.getLogger(dataConfig.logging);
@@ -91,7 +89,7 @@ const configModels = (databases) => {
 };
 
 export default class Container extends Context {
-    constructor(config){
+    constructor(config) {
         super(config);
         log4js.configure(this.config.log4js, {cwd: this.config.log4js.cwd});
         const defaultLogging = this.config.log4js.appenders[0].category;
@@ -102,12 +100,16 @@ export default class Container extends Context {
             .register('models', models)
             // .register('output.oauth', oauth)
             .register('service.auth.server', new OAuthServerService(models, defaultLogging))
-            .register('service.auth.client', new OAuthProviderService({models: models, oauthClient: oauth, handlers:[]}))
+            .register('service.auth.client', new OAuthProviderService({
+                models: models,
+                oauthClient: oauth,
+                handlers: []
+            }))
             .register('input.agent', new KoaUserAgent(models, defaultLogging))
             .register('api.auth.server', new KoaOAuthServer({
-                                            debug: false,
-                                            model: this.module('service.auth.server')
-                                        }))
+                debug: false,
+                model: this.module('service.auth.server')
+            }))
             .register('api.auth.client', new KoaOAuthClient({service: this.module('service.auth.client')}))
             .register('web.auth', new KoaBrowserAuth(this));
     }

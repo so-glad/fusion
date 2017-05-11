@@ -15,7 +15,7 @@ export default class OAuthCode extends ModelClass {
     static belongsToDefines = [];
 
     static addBelongTo = (type, as, foreignKey) => {
-        OAuthCode.belongsToDefines.push({type: type, as:as, foreignKey:foreignKey})
+        OAuthCode.belongsToDefines.push({type: type, as: as, foreignKey: foreignKey});
     };
 
     get name() {
@@ -24,7 +24,7 @@ export default class OAuthCode extends ModelClass {
 
     get belongsToDefine() {
         return OAuthCode.belongsToDefines;
-    };
+    }
 
     get defaultOptions() {
         return {
@@ -67,10 +67,10 @@ export default class OAuthCode extends ModelClass {
                 type: Sequelize.DATE,
                 field: 'expires_at'
             }
-        }
-    };
+        };
+    }
 
     constructor(provider, options) {
         super(provider, options);
     }
-};
+}

@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -10,13 +9,13 @@ import Sequelize from 'sequelize';
 
 
 import ModelClass from './ModelClass';
- 
+
 export default class OAuthAccessToken extends ModelClass {
 
     static belongsToDefines = [];
 
     static addBelongTo = (type, as, foreignKey) => {
-        OAuthAccessToken.belongsToDefines.push({type: type, as:as, foreignKey:foreignKey})
+        OAuthAccessToken.belongsToDefines.push({type: type, as: as, foreignKey: foreignKey})
     };
 
     get name() {
@@ -73,10 +72,10 @@ export default class OAuthAccessToken extends ModelClass {
                 type: Sequelize.DATE,
                 field: 'expires_at'
             }
-        }
-    };
+        };
+    }
 
     constructor(provider, options) {
-        super(provider, options)
+        super(provider, options);
     }
-};
+}

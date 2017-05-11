@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -10,13 +9,13 @@ import Sequelize from 'sequelize';
 
 
 import ModelClass from './ModelClass';
- 
+
 export default class OAuthClient extends ModelClass {
 
     static belongsToDefines = [];
 
     static addBelongTo = (type, as, foreignKey) => {
-        OAuthClient.belongsToDefines.push({type: type, as:as, foreignKey:foreignKey})
+        OAuthClient.belongsToDefines.push({type: type, as: as, foreignKey: foreignKey})
     };
 
     get name() {
@@ -75,10 +74,10 @@ export default class OAuthClient extends ModelClass {
                 field: 'revoked',
                 default: false
             }
-        }
-    };
+        };
+    }
 
     constructor(provider, options) {
         super(provider, options);
     }
-};
+}

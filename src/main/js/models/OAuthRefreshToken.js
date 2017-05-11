@@ -15,7 +15,7 @@ export default class OAuthRefreshToken extends ModelClass {
     static belongsToDefines = [];
 
     static addBelongTo = (type, as, foreignKey) => {
-        OAuthRefreshToken.belongsToDefines.push({type: type, as:as, foreignKey:foreignKey})
+        OAuthRefreshToken.belongsToDefines.push({type: type, as: as, foreignKey: foreignKey})
     };
 
     get name() {
@@ -24,7 +24,7 @@ export default class OAuthRefreshToken extends ModelClass {
 
     get belongsToDefine() {
         return OAuthRefreshToken.belongsToDefines;
-    };
+    }
 
     get defaultOptions() {
         return {
@@ -62,10 +62,10 @@ export default class OAuthRefreshToken extends ModelClass {
                 type: Sequelize.DATE,
                 field: 'expires_at'
             }
-        }
-    };
+        };
+    }
 
     constructor(provider, options) {
         super(provider, options);
     }
-};
+}

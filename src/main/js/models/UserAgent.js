@@ -14,8 +14,8 @@ import ModelClass from './ModelClass';
 export default class UserAgentClass extends ModelClass {
 
     get name() {
-        return 'user_agent'
-    };
+        return 'user_agent';
+    }
 
     get defaultOptions() {
         return {
@@ -52,10 +52,10 @@ export default class UserAgentClass extends ModelClass {
                 type: Sequelize.STRING,
                 field: 'content'
             }
-        }
+        };
     }
 
     constructor(provider, options) {
-        super(provider, options)
+        super(provider, options);
     }
-};
+}
