@@ -9,7 +9,7 @@
 
 import log4js from 'koa-log4';
 import Sequelize from 'sequelize';
-// import oauth from 'oauth';
+import oauth from 'oauth';
 //Models classes
 import RoleClass from './models/Role';
 import UserClass from './models/User';
@@ -21,12 +21,15 @@ import OAuthProviderClass from './models/OAuthProvider';
 import UserAgentClass from './models/UserAgent';
 
 import OAuthServerService from './services/OAuthServer';
+import OAuthProviderService from "./services/OAuthProvider";
 
 import KoaOAuthServer from './middlewares/KoaOAuthServer';
+import KoaOAuthClient from "./middlewares/KoaOAuthClient";
 import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
 
 import KoaUserAgent from "./middlewares/KoaUserAgent";
 import Context from './Context';
+
 
 
 const configDatabase = (databases) => {
@@ -94,17 +97,18 @@ export default class Container extends Context {
         const defaultLogging = this.config.log4js.appenders[0].category;
         const databases = configDatabase(this.config.databases);
         const models = configModels(databases);
-        const oauthServer = new KoaOAuthServer({
-            debug: false,
-            model: new OAuthServerService(models, defaultLogging)
-        });
 
         this.register('default.client', this.config.client)
             .register('models', models)
             // .register('output.oauth', oauth)
-            // .register('service')
+            .register('service.auth.server', new OAuthServerService(models, defaultLogging))
+            .register('service.auth.client', new OAuthProviderService({models: models, oauthClient: oauth, handlers:[]}))
             .register('input.agent', new KoaUserAgent(models, defaultLogging))
-            .register('api.auth', oauthServer)
+            .register('api.auth.server', new KoaOAuthServer({
+                                            debug: false,
+                                            model: this.module('service.auth.server')
+                                        }))
+            .register('api.auth.client', new KoaOAuthClient({service: this.module('service.auth.client')}))
             .register('web.auth', new KoaBrowserAuth(this));
     }
 }

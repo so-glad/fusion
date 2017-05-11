@@ -42,7 +42,6 @@ export default class KoaOAuthClient {
                 token: {user: user, client: null},
                 client: null
             }
-
         } catch(e){
 
         } finally {
