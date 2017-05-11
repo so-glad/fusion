@@ -125,7 +125,7 @@ export default class KoaOAuthServer {
                 ctx.state.oauth = result;
                 await next();
             } else {
-                ctx.response.header('content-type', 'application/json; charset=UTF-8');
+                ctx.response.header['content-type'] = 'application/json; charset=UTF-8';
                 ctx.body = result;
             }
         }
