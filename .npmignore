@@ -1,26 +1,35 @@
-# Created by .ignore support plugin (hsz.mobi)
+# OS stuff
+.*.swp
+._*
+.DS_Store
+
+# VCS stuff
+CVS
+.git
+.gitignore
+.hg
+.svn
+
+# Javascript stuff
+.babelrc
+.eslintrc
+.lock-wscript
+.wafpickle-*
+config.gypi
+
+# NPM stuff
+node_modules
+.npmignore
+npm-debug.log
+.npmrc
+
+# IDE/Editor stuff
 .idea
 .eclipse
 .vscode
 .atom
 .sublime
 
+# Project own stuff
 src
 var
-.*.swp
-._*
-.DS_Store
-.git
-.hg
-.npmrc
-.lock-wscript
-.svn
-.wafpickle-*
-config.gypi
-CVS
-npm-debug.log
-.babelrc
-.eslintrc
-.gitignore
-
-node_modules
