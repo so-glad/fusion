@@ -108,7 +108,8 @@ export default class Container extends Context {
             .register('input.agent', new KoaUserAgent(models, defaultLogging))
             .register('api.auth.server', new KoaOAuthServer({
                 debug: false,
-                model: this.module('service.auth.server')
+                model: this.module('service.auth.server'),
+                logger: defaultLogging
             }))
             .register('api.auth.client', new KoaOAuthClient({service: this.module('service.auth.client')}))
             .register('web.auth', new KoaBrowserAuth(this));

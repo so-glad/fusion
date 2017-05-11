@@ -12,30 +12,50 @@ import log4js from 'koa-log4';
 import NodeOAuthServer, {
     Request,
     Response,
-    UnauthorizedRequestError
+    UnauthorizedRequestError,
+    InvalidGrantError
 } from 'oauth2-server';
 
-const handleResponse = (ctx, response) => {
-    ctx.response.status = response.status;
-    for (const header in response.headers) {
-        ctx.response.header[header] = response.headers[header];
+
+const convertToken = (token) => {
+    if (!token) {
+        return {};
     }
+    const user = token.user;
+    const client = token.client;
+    delete token.user;
+    delete token.client;
+    return {
+        token: token,
+        user: user,
+        client: client
+    };
 };
 
-const handleError = (e, ctx, response) => {
-    if (response) {
-        for (const header in response.headers) {
-            ctx.response.header[header] = response.headers[header];
-        }
+const convertError = (error) => {
+    const resultError = {};
+    if (error) {
+        resultError.error = true;
+        resultError.message = error.message;
     }
+    if (error instanceof UnauthorizedRequestError) {
+        resultError.status = error.status;
+        resultError.code = error.code;
+    }
+    if (error instanceof InvalidGrantError
+        && error.message === 'Invalid grant: user credentials are invalid') {
+        resultError.status = error.status = 401;
+        resultError.code = error.code = 401;
+        resultError.statusCode = error.statusCode = 401;
+    }
+    return resultError;
+};
 
-    if (e instanceof UnauthorizedRequestError) {
-        ctx.status = e.code;
-    } else {
-        ctx.body = {error: e.name, error_description: e.message};
-        ctx.status = e.code;
+const transferResponse = (response, res) => {
+    res.status = response.status;
+    for (const header in response.headers) {
+        res.header[header] = response.headers[header];
     }
-    return ctx.app.emit('error', e, this);
 };
 
 export default class KoaOAuthServer {
@@ -64,14 +84,19 @@ export default class KoaOAuthServer {
         const request = new Request(ctx.request);
         const response = new Response(ctx.res);
         try {
-            ctx.state.oauth = {
-                code: await this.delegate.authorize(request, response)
-            };
-
-            handleResponse(response);
-            await next();
+            const code = await this.delegate.authorize(request, response);
+            transferResponse(response, ctx.response);
+            if (next) {
+                ctx.state.oauth = {
+                    code: code
+                };
+                await next();
+            } else {
+                ctx.res.header('content-type', 'application/json; charset=UTF-8');
+                ctx.res.body = {code: code};
+            }
         } catch (e) {
-            handleError(e, response);
+            this.logger.error(e);
         }
     };
 
@@ -85,23 +110,25 @@ export default class KoaOAuthServer {
     token = async (ctx, next) => {
         const request = new Request(ctx.request);
         const response = new Response(ctx.res);
+        let result = null;
         try {
             const token = await this.delegate.token(request, response);
-            const user = token.user;
-            const client = token.client;
-            delete token.user;
-            delete token.client;
-            ctx.state.oauth = {
-                token: token,
-                user: user,
-                client: client
-            };
-            handleResponse(ctx, response);
-            await next();
-        } catch (e) {
-            handleError(e, response);
+            result = convertToken(token);
+        } catch (error) {
+            result = convertError(error);
+            response.status = result.status;
+            this.logger.error('Oauth token error, cause: ' + error.message
+                + ', error code: ' + error.statusCode);
+        } finally {
+            transferResponse(response, ctx.response);
+            if (next) {
+                ctx.state.oauth = result;
+                await next();
+            } else {
+                ctx.response.header('content-type', 'application/json; charset=UTF-8');
+                ctx.body = result;
+            }
         }
-
     };
 
     /**
@@ -115,22 +142,19 @@ export default class KoaOAuthServer {
         const request = new Request(ctx.request);
         try {
             const token = await this.delegate.authenticate(request);
-            const user = token.user;
-            const client = token.client;
-            delete token.user;
-            delete token.client;
-            ctx.state.oauth = {
-                token: token,
-                user: user,
-                client: client
-            };
-            await next();
+            if (next) {
+                ctx.state.oauth = convertToken(token);
+                await next();
+            } else {
+                ctx.res.header('content-type', 'application/json; charset=UTF-8');
+                ctx.res.body = convertToken(token);
+            }
         } catch (e) {
-            handleError(e);
+            this.logger.error(e);
         }
     };
 
     revoke = (token) => {
         this.service.revokeToken(token);
     };
-};
+}

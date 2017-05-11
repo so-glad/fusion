@@ -4,32 +4,43 @@
         "resources": "src/test/resources",
         "client": "src/test/web"
     },
+    "client": {
+        "clientId": "10000001",
+        "clientSecret": "Qxcnjb7dLoELoJ628f3Omc76OyXiZAjsDNJ2EyYy"
+    },
     "log4js": {
         "cwd": "var/logs",
         "appenders": [
             {
-                "category": "test",
+                "category": "fuxion",
                 "type": "dateFile",
-                "filename": "test.log",
+                "filename": "fuxion.log",
                 "pattern": "-yyyy-MM-dd",
                 "alwaysIncludePattern": false
             },
             {
-                "category": "test-db",
+                "category": "fuxion-http",
                 "type": "dateFile",
-                "filename": "test-db.log",
+                "filename": "fuxion-http.log",
+                "pattern": "-yyyy-MM-dd",
+                "alwaysIncludePattern": false
+            },
+            {
+                "category": "fuxion-db",
+                "type": "dateFile",
+                "filename": "fuxion-db.log",
                 "pattern": "-yyyy-MM-dd",
                 "alwaysIncludePattern": false
             }
         ]
     },
     "session": {
-        "store": "redis:1",
-        "key": "fusion",
+        "key": "fuxion",
         "maxAge": 86400000,
         "overwrite": true,
         "httpOnly": true,
-        "signed": true
+        "signed": true,
+        "store": "redis:1"
     },
     "databases": {
         "common": {
@@ -39,7 +50,16 @@
             "name": "common",
             "username": "soglad",
             "password": "soglad",
-            "logging": "test-db"
+            "logging": "fuxion-db"
+        },
+        "fusion": {
+            "dialect": "postgres",
+            "host": "127.0.0.1",
+            "port": 5432,
+            "name": "fusion",
+            "username": "soglad",
+            "password": "soglad",
+            "logging": "fuxion-db"
         },
         "redis": {
             "host": "127.0.0.1",

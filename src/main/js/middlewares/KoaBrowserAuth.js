@@ -23,17 +23,20 @@ export default class KoaBrowserAuth {
         ctx.request.body.client_id = this.defaultClient.clientId;
         ctx.request.body.client_secret = this.defaultClient.clientSecret;
         await this.apiAsServer.token(ctx, async () => {
-            if(!ctx.state.oauth) {
+            if(ctx.state.oauth && ctx.state.oauth.user) {
+                if(ctx.regenerateSession) {
+                    await ctx.regenerateSession();
+                }
+                // ctx.response.setHeader('Set-cookie', 'remember=' + ctx.state.oauth.token.accessToken);
+                ctx.session.client = ctx.state.oauth.client;
+                ctx.session.user = ctx.state.oauth.user;
+            }
+            if(!next) {
+                ctx.body = ctx.state.oauth;
+                ctx.response.header['content-type'] = 'application/json;charset=UTF-8';
+            } else {
                 await next();
-                return;
             }
-            if(ctx.regenerateSession) {
-                await ctx.regenerateSession();
-            }
-            // ctx.response.setHeader('Set-cookie', 'remember=' + ctx.state.oauth.token.accessToken);
-            ctx.session.client = ctx.state.oauth.client;
-            ctx.session.user = ctx.state.oauth.user;
-            await next();
         });
     };
 

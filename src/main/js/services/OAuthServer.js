@@ -160,7 +160,7 @@ export default class OAuthServerService {
         const {User} = this.models;
         try {
             const user = await User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
-            if (bcrypt.compareSync(password, user.password)) {
+            if (user && bcrypt.compareSync(password, user.password)) {
                 return {
                     id: user.id,
                     username: user.username,

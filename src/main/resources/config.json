@@ -12,23 +12,30 @@
         "cwd": "var/logs",
         "appenders": [
             {
-                "category": "fusion",
+                "category": "fuxion",
                 "type": "dateFile",
-                "filename": "fusion.log",
+                "filename": "fuxion.log",
                 "pattern": "-yyyy-MM-dd",
                 "alwaysIncludePattern": false
             },
             {
-                "category": "fusion-db",
+                "category": "fuxion-http",
                 "type": "dateFile",
-                "filename": "fusion-db.log",
+                "filename": "fuxion-http.log",
+                "pattern": "-yyyy-MM-dd",
+                "alwaysIncludePattern": false
+            },
+            {
+                "category": "fuxion-db",
+                "type": "dateFile",
+                "filename": "fuxion-db.log",
                 "pattern": "-yyyy-MM-dd",
                 "alwaysIncludePattern": false
             }
         ]
     },
     "session": {
-        "key": "fusion",
+        "key": "fuxion",
         "maxAge": 86400000,
         "overwrite": true,
         "httpOnly": true,
@@ -43,7 +50,7 @@
             "name": "common",
             "username": "soglad",
             "password": "soglad",
-            "logging": "fusion-db"
+            "logging": "fuxion-db"
         },
         "fusion": {
             "dialect": "postgres",
@@ -52,10 +59,10 @@
             "name": "fusion",
             "username": "soglad",
             "password": "soglad",
-            "logging": "fusion-db"
+            "logging": "fuxion-db"
         },
         "redis": {
-            "host": "172.17.0.1",
+            "host": "127.0.0.1",
             "port": 6379,
             "password": "redis"
         }
