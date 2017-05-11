@@ -44,7 +44,7 @@ export default class UserClass extends ModelClass {
     get fieldsDefine() {
         return {
             id: {
-                type: Sequelize.BIGINT.UNSIGNED,
+                type: Sequelize.BIGINT,
                 primaryKey: true,
                 autoIncrement: false,
                 defaultValue: Sequelize.DEFAULT,

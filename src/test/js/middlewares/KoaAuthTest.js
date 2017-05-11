@@ -30,8 +30,8 @@ router.get('/session/test', async (ctx) => {
     ctx.session.test = ctx.session.test ? ctx.session.test + 1 : 1;
     console.info(ctx.session.test);
 });
-router.post('/oauth/token', container.getModule('auth').login);
-router.post('/oauth/logout', container.getModule('auth').logout);
+router.post('/oauth/token', container.getModule('web.auth').login);
+router.post('/oauth/logout', container.getModule('web.auth').logout);
 
 app.use(router.routes())
     .use(router.allowedMethods());
