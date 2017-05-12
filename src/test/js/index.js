@@ -71,7 +71,7 @@ export default class Application {
     };
 
     startUp = () => {
-        const port = parseInt(container.config.port || process.env.PORT || 5000),
+        const port = parseInt(container.config.port ||process.env.APP_PORT || 5000),
             server = http.createServer(this.app.callback());
 
         server.listen(port);

@@ -69,3 +69,5 @@ etc
 # temp put lib for npm use from github
 lib
 var
+dist
+dest

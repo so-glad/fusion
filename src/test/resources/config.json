@@ -1,5 +1,6 @@
 {
     "path": {
+        "root": "${APP_HOME}",
         "server": "src/test/js",
         "resources": "src/test/resources",
         "client": "src/test/web"

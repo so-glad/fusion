@@ -31,5 +31,7 @@ npm-debug.log
 .sublime
 
 # Project own stuff
+dist
+dest
 src
-#var
+var

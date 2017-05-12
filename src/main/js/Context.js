@@ -18,7 +18,8 @@ const changePathVars = (config, confPath) => {
                 .replace('${path.root}', confPath.root)
                 .replace('${path.client}', confPath.client)
                 .replace('${path.server}', confPath.server)
-                .replace('${path.resources}', confPath.resources);
+                .replace('${path.resources}', confPath.resources)
+                .replace('${APP_HOME}', process.env.APP_HOME);
         } else if (_.isObject(config[key])) {
             config[key] = changePathVars(config[key], confPath);
         }
