@@ -5,8 +5,8 @@
  * @since 2017/5/3.
  */
 
-import Sequelize from 'sequelize';
 
+import Sequelize from 'sequelize';
 
 import ModelClass from './ModelClass';
 

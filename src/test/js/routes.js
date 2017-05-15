@@ -20,5 +20,7 @@ export default class Router extends KoaRouter {
         this.post('/oauth/token', async (ctx) => await apiAuth.token(ctx));
         this.post('/oauth/authorize', apiAuth.authorize);
         this.post('/oauth/authenticate', apiAuth.authenticate);
+        const apiClient = container.module('api.auth.client');
+        this.get('/oauth/:provider/authorize', async (ctx) => await apiClient.getAuthorizeUrl(ctx));
     }
 }

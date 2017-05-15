@@ -23,7 +23,6 @@ import Router from './routes';
 const container = new Container(config);
 const logger = log4js.getLogger('fuxion');
 const httpLogger = log4js.getLogger('fuxion-http');
-const router = new Router(container);
 
 
 export default class Application {
@@ -101,4 +100,6 @@ export default class Application {
     }
 }
 
-new Application().withRouter(router).startUp();
+container.heatUp().then(container => {
+    new Application().withRouter(new Router(container)).startUp();
+});

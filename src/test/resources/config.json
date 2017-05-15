@@ -6,8 +6,10 @@
         "client": "src/test/web"
     },
     "client": {
-        "clientId": "10000001",
-        "clientSecret": "Qxcnjb7dLoELoJ628f3Omc76OyXiZAjsDNJ2EyYy"
+        "web": "10000001",
+        "github": "70aa74f28e9cdbdf98bf",
+        "weibo": "",
+        "wechat": ""
     },
     "log4js": {
         "cwd": "var/logs",

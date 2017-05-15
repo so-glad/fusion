@@ -14,7 +14,7 @@ export default class KoaBrowserAuth {
     constructor(container) {
         this.apiAsServer = container.module('api.auth.server');
         this.apiAsClient = container.module('api.auth.client');
-        this.defaultClient = container.module('default.client');
+        this.defaultClient = container.module('oauth.client.local');
     }
 
     //OAuth Server actions group
@@ -113,10 +113,14 @@ export default class KoaBrowserAuth {
     });
 
     //OAuth client actions group
-    redirectAuthorizeUrl = async (ctx, next) => {
+    redirectAuthorizeUrl = async (ctx) => {
         // const provider = await this.apiAsClient.getAuthorizeUrl(ctx, next);
         //TODO conbine url and redirect.
-        ctx.res.redirect();
+        this.apiAsClient.getAuthorizeUrl(ctx, async () => {
+            if(ctx.state.oauth.result) {
+                ctx.res.redirect(ctx.state.oauth.url);
+            }
+        });
     };
 
     callbackAuthorizeCode = async (ctx, next) => {

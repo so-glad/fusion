@@ -22,14 +22,23 @@ RUN set -ex \
     && sed -i '54s/resources/etc/' $APP_HOME/lib/main.js \
     && npm config set strict-ssl false \
     && npm config set registry https://pub.glad.so/repository/npm \
+    && cp $APP_HOME/etc/config.json /tmp/ \
     && echo -e '#!/bin/sh\n\
+\n\
+apk add -U build-base python2\n\
 \n\
 if [ -d $APP_HOME/node_modules ]; then\n\
     npm update\n\
 else\n\
-    apk add -U build-base python2\n\
     npm install\n\
-    apk del build-base python2\n\
+fi\n\
+\n\
+if [ ! -d $APP_HOME/var/logs ]; then\n\
+    mkdir -p $APP_HOME/var/logs\n\
+fi\n\
+\n\
+if [ ! -f $APP_HOME/etc/config.json ]; then\n\
+    cp /tmp/config.json $APP_HOME/etc/\n\
 fi\n\
 \n\
 exec "$@"' >> /usr/local/bin/entry \
@@ -38,4 +47,4 @@ exec "$@"' >> /usr/local/bin/entry \
 WORKDIR $APP_HOME
 HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:$APP_PORT/ || exit 1
 ENTRYPOINT ["entry"]
-CMD ["npm", "run", "start"]
+CMD ["node", "lib/main.js"]

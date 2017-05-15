@@ -2,24 +2,35 @@
 
 /**
  * @author palmtale
- * @since 2017/5/8.
+ * @since 2017/5/16.
  */
 
 
 import Sequelize from 'sequelize';
-import ModelClass from './ModelClass';
 
-export default class OAuthProvider extends ModelClass {
+import ModelClass from './ModelClass';
+ 
+export default class OAuthProviderUser extends ModelClass {
+
+    static belongsToDefines = [];
+
+    static addBelongTo = (type, as, foreignKey) => {
+        OAuthProviderUser.belongsToDefines.push({type: type, as: as, foreignKey: foreignKey})
+    };
 
     get name() {
         return 'oauth_provider';
+    }
+
+    get belongsToDefine() {
+        return OAuthProviderUser.belongsToDefines;
     }
 
     get defaultOptions() {
         return {
             schema: 'public',
 
-            tableName: 'oauth_provider',
+            tableName: 'oauth_provider_user',
 
             timestamps: true,
 
@@ -31,41 +42,44 @@ export default class OAuthProvider extends ModelClass {
 
     get fieldsDefine() {
         return {
-            type: {
+            clientUserKey: {
                 type: Sequelize.STRING,
-                field: 'type',
+                field: 'client_user_key',
                 primaryKey: true
             },
-            clientId: {
+            holderUserKey: {
                 type: Sequelize.STRING,
-                field: 'client_id',
+                field: 'holder_user_key',
                 primaryKey: true
             },
-            clientSecret: {
+            providerUserKey: {
                 type: Sequelize.STRING,
-                field: 'client_secret'
+                field: 'provider_user_key'
             },
             revoked: {
                 type: Sequelize.BOOLEAN,
                 field: 'revoked',
                 defaultValue: false
             },
-            name: {
+            accessToken: {
                 type: Sequelize.STRING,
-                field: 'name',
-                unique: 'oauth_provider_name_type_client_id_unique'
+                field: 'access_token'
             },
-            redirectUrl: {
-                type: Sequelize.STRING,
-                field: 'redirect_url'
+            accessTime: {
+                type: Sequelize.INTEGER,
+                field: 'access_time'
             },
-            authorizeUrl: {
+            refreshToken: {
                 type: Sequelize.STRING,
-                field: 'authorize_url'
+                field: 'refresh_token'
             },
-            tokenUrl: {
+            refreshTime: {
+                type: Sequelize.INTEGER,
+                field: 'refresh_time'
+            },
+            scope: {
                 type: Sequelize.STRING,
-                field: 'token_url'
+                field: 'scope'
             }
         };
     }

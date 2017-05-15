@@ -6,18 +6,17 @@
  */
 
 
-export default class OAuthProviderService {
+import log4js from 'koa-log4';
 
-    oauthClient = null;
+export default class OAuthProviderService {
 
     models = null;
 
-    handlers = null;
+    logger = console;
 
-    constructor({models, oauthClient, handlers}) {
-        this.models = models;
-        this.oauthClient = oauthClient;
-        this.handlers = handlers;
+    constructor(options) {
+        this.models = options.models;
+        this.logger = options.logger ? log4js.getLogger(options.logger) : this.logger;
     }
 
     findProvider = async (type, client) => {
@@ -33,6 +32,7 @@ export default class OAuthProviderService {
             provider.authorizeUrl,
             provider.tokenUrl,
             {});
+
         const accessToken = await providerClient.getOAuthAccessToken(code, {});
         const handler = this.handlers[type];
         //TODO To connect provider via provider.tokenUrl, and sync user info locally.

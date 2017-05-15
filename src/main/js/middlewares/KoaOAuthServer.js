@@ -65,10 +65,11 @@ export default class KoaOAuthServer {
     logger = console;
 
     constructor(options) {
-        this.service = options.model;
+        this.service = options.service;
         this.logger = options.logger ?
             ( _.isString(options.logger) ? log4js.getLogger(options.logger) : options.logger )
             : console;
+        options.model = options.service;
         delete options.logger;
         this.delegate = new NodeOAuthServer(options);
     }

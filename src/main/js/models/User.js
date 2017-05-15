@@ -101,11 +101,6 @@ export default class UserClass extends ModelClass {
                 type: Sequelize.BOOLEAN,
                 field: 'mobile_verified',
                 default: false
-            },
-            rememberToken: {
-                type: Sequelize.STRING,
-                field: 'remember_token',
-                default: ''
             }
         };
     }

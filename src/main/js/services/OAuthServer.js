@@ -24,7 +24,7 @@ const grantTypes = (value) => {
     if ((8 & value) === 8) {
         grants.push('implicit');
     }
-    if ((16 & value) === 8) {
+    if ((16 & value) === 16) {
         grants.push('refresh_token');
     }
     return grants;
@@ -33,11 +33,12 @@ const grantTypes = (value) => {
 export default class OAuthServerService {
 
     models = null;
+
     logger = console;
 
-    constructor(models, logging) {
-        this.models = models;
-        this.logger = logging ? log4js.getLogger(logging) : this.logger;
+    constructor(options) {
+        this.models = options.models;
+        this.logger = options.logger ? log4js.getLogger(options.logger) : this.logger;
     }
 
     saveToken = (token, client, user) => {

@@ -8,7 +8,7 @@
 
 import log4js from 'koa-log4';
 import Sequelize from 'sequelize';
-import oauth from 'oauth';
+
 //Models classes
 import RoleClass from './models/Role';
 import UserClass from './models/User';
@@ -17,6 +17,7 @@ import OAuthCodeClass from './models/OAuthCode';
 import OAuthAccessTokenClass from './models/OAuthAccessToken';
 import OAuthRefreshTokenClass from './models/OAuthRefreshToken';
 import OAuthProviderClass from './models/OAuthProvider';
+import OAuthProviderUser from './models/OAuthProviderUser';
 import UserAgentClass from './models/UserAgent';
 //Services
 import OAuthServerService from './services/OAuthServer';
@@ -75,7 +76,7 @@ const configModels = (databases) => {
     const OAuthRefreshToken = new OAuthRefreshTokenClass(databases.common, {});
 
     const OAuthProvider = new OAuthProviderClass(databases.common, {});
-
+    OAuthProviderUser.addBelongTo(User.delegate, 'user', 'user_id');
     return {
         Role: Role,
         User: User,
@@ -89,6 +90,9 @@ const configModels = (databases) => {
 };
 
 export default class Container extends Context {
+
+    callbacks = [];
+
     constructor(config) {
         super(config);
         log4js.configure(this.config.log4js, {cwd: this.config.log4js.cwd});
@@ -96,24 +100,33 @@ export default class Container extends Context {
         const databases = configDatabase(this.config.databases);
         const models = configModels(databases);
 
-        this.register('default.client', this.config.client)
-            .register('models', models)
-            // .register('output.oauth', oauth)
-            .register('service.auth.server', new OAuthServerService(models, defaultLogging))
-            .register('service.auth.client', new OAuthProviderService({
-                models: models,
-                oauthClient: oauth,
-                handlers: []
-            }))
-            .register('input.agent', new KoaUserAgent(models, defaultLogging))
-            .register('api.auth.server', new KoaOAuthServer({
-                debug: false,
-                model: this.module('service.auth.server'),
-                logger: defaultLogging
-            }))
-            .register('api.auth.client', new KoaOAuthClient({service: this.module('service.auth.client')}))
-            .register('web.auth', new KoaBrowserAuth(this));
+        this.register('models', models)
+            .register('service.auth.server', new OAuthServerService({models: models, logger: defaultLogging}))
+            .register('service.auth.client', new OAuthProviderService({models: models, logger: defaultLogging}))
+            .register('input.agent', new KoaUserAgent(models, defaultLogging));
     }
+
+    heatUp = async () => {
+        const defaultLogging = this.config.log4js.appenders[0].category;
+        const models = this.module('models');
+        const config = this.config;
+        const client = await models.OAuthClient.findOne({where: {id: config.client.web}});
+        this.register('oauth.client.web', client);
+        const providers = await models.OAuthProvider.findAll({where:
+            {type: Object.keys(config.client), clientId: Object.values(config.client)}});
+        this.register('api.auth.client', new KoaOAuthClient({
+            service: this.module('service.auth.client'),
+            logger: defaultLogging,
+            providers: providers
+        }))
+        .register('api.auth.server', new KoaOAuthServer({
+            debug: false,
+            service: this.module('service.auth.server'),
+            logger: defaultLogging
+        }))
+        .register('web.auth', new KoaBrowserAuth(this));
+        return this;
+    };
 }
 
 module.exports = Container;
