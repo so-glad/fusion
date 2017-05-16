@@ -10,6 +10,8 @@ import crypto from 'crypto';
 import oauth from 'oauth';
 import log4js from 'koa-log4';
 
+import cron from 'cron';
+
 import providerUrl from './provider_urls';
 import providerActionScopes from './provider_action_scopes';
 import providerUserKeys from './provider_user_keys';
@@ -24,10 +26,6 @@ export default class OAuthProviderService {
     localUserModel = null;
     handlers = [];
     logger = console;
-
-    get accessModel() {
-        return new this.accessModelClass({tableName: 'oauth_provider_access_' + new Date().format('yyyyMMdd')});
-    }
 
     constructor(options) {
         this.accessModelClass = options.accessModelClass;
@@ -45,6 +43,12 @@ export default class OAuthProviderService {
             this.providerUserModels[provider.type] =
                 new userModelClass({tableName: 'oauth_provider_user_' + provider.type});
         }
+
+        new cron.CronJob('0 0 0 * * *', () => {
+            this.accessModel =
+                new this.accessModelClass({tableName: 'oauth_provider_access_' + new Date().format('yyyyMMdd')});
+        }, () => {
+        }, true, 'Asia/Shanghai', null, true);
     }
 
     generateAuthorizeUrl = async (type, action, user) => {
@@ -62,8 +66,7 @@ export default class OAuthProviderService {
         //TODO random gen state for user and store
         const state = crypto.createHash('sha256')
             .update((user ? user.id : '') + action + scope + now.getTime(), 'utf8').digest('hex');
-        const AccessModel = await this.accessModel.connect();
-        AccessModel.create({
+        this.accessModel.create({
             type: type, client_id: handler._clientId, user_id: (user ? user.id : null),
             action: action, scope: scope, state: state, timestamp: now
         });
@@ -77,8 +80,7 @@ export default class OAuthProviderService {
         if (user) {
             where.user_id = user.id;
         }
-        const AccessModel = await this.accessModel.connect();
-        const access = await AccessModel.findOne({where: where});
+        const access = await this.accessModel.findOne({where: where});
         if (access.timestamp + 60 * 1000 < new Date()) {//expired
             return {error: 'Action state expired'};
         }
