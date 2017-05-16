@@ -101,8 +101,6 @@ export default class Container extends Context {
         const models = configModels(databases);
 
         this.register('models', models)
-            .register('service.auth.server', new OAuthServerService({models: models, logger: defaultLogging}))
-            .register('service.auth.client', new OAuthProviderService({models: models, logger: defaultLogging}))
             .register('input.agent', new KoaUserAgent(models, defaultLogging));
     }
 
@@ -114,10 +112,19 @@ export default class Container extends Context {
         this.register('oauth.client.web', client);
         const providers = await models.OAuthProvider.findAll({where:
             {type: Object.keys(config.client), clientId: Object.values(config.client)}});
-        this.register('api.auth.client', new KoaOAuthClient({
-            service: this.module('service.auth.client'),
+
+        this.register('service.auth.client', new OAuthProviderService({
+            models: models,
             logger: defaultLogging,
             providers: providers
+        }))
+        .register('service.auth.server', new OAuthServerService({
+            models: models,
+            logger: defaultLogging
+        }))
+        .register('api.auth.client', new KoaOAuthClient({
+            service: this.module('service.auth.client'),
+            logger: defaultLogging
         }))
         .register('api.auth.server', new KoaOAuthServer({
             debug: false,

@@ -17,7 +17,7 @@ module.exports = {
         return function () { // For find arguments, arrow function is not OK.
             const args = Array.prototype.slice.call(arguments);
             return new Promise((resolve, reject) => {
-                args.push((err, result) => {
+                args.push((err, ...result) => {
                     if (err) {
                         reject(err);
                     } else {

@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -9,13 +8,12 @@
 
 import _ from 'lodash';
 import log4js from 'koa-log4';
-import oauth from 'oauth';
+
 
 export default class KoaOAuthClient {
 
     service = null;
     logger = console;
-    handlers = [];
 
     constructor(options) {
         this.service = options.service;
@@ -23,26 +21,13 @@ export default class KoaOAuthClient {
             ( _.isString(options.logger) ? log4js.getLogger(options.logger) : options.logger )
             : console;
         delete options.logger;
-        for(const index in options.providers) {
-            const provider = options.providers[index];
-            this.handlers[provider.type] = new oauth.OAuth2(provider.clientId, provider.clientSecret,
-                '',
-                provider.authorizeUrl,
-                provider.tokenUrl,
-                {});
-        }
     }
 
     getAuthorizeUrl = async (ctx, next) => {
         const type = ctx.params.provider;
-        const handler = this.handlers[type];
-        if(!handler) {
-            //TODO error.
-        }
         //TODO Add params, e.g. state.
-        const params = {state: 'fdafda', scope: 'fuck'};
-        const authorizeUrl = handler.getAuthorizeUrl(params);
-        if(!next) {
+        const authorizeUrl = this.service.generateAuthorizeUrl(type, 'user');
+        if (!next) {
             ctx.response.header['content-type'] = 'application/json;charset=utf-8';
             ctx.body = {result: true, url: authorizeUrl, type: type};
         } else {
@@ -53,21 +38,18 @@ export default class KoaOAuthClient {
 
     getAccessTokenByCode = async (ctx, next) => {
         //TODO Verify state.
-        const type = ctx.request.body.type;
-        const handler = this.handlers[type];
-        if(!handler) {
-            //TODO error.
+        const type = ctx.params.provider;
+        const code = ctx.request.query.code;
+        const state = ctx.request.query.state;
+        const accessToken = await this.service.getAccessTokenByCode(type, code, state);
+        const result = accessToken.error ? {result: false, cause: accessToken, type: type}
+            : {result: true, token: accessToken, type: type};
+        if (!next) {
+            ctx.response.header['content-type'] = 'application/json;charset=utf-8';
+            ctx.body = result;
+        } else {
+            ctx.state.oauth = result;
+            await next();
         }
-        const params = {};
-        handler.getOAuthAccessToken(ctx.request.body.code, params, (err, accessToken, refreshToken, others) => {
-            if(!next) {
-                ctx.response.header['content-type'] = 'application/json;charset=utf-8';
-                ctx.body = {result: true, accessToken: accessToken, refreshToken: refreshToken, extra: others};
-
-            } else {
-                ctx.state.oauth = {result: true, accessToken: accessToken, refreshToken: refreshToken, extra: others};
-                next();
-            }
-        });
     }
-};
+}
