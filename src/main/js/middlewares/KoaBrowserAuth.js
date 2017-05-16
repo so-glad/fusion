@@ -114,9 +114,9 @@ export default class KoaBrowserAuth {
 
     //OAuth client actions group
     redirectAuthorizeUrl = async (ctx) => {
-        // const provider = await this.apiAsClient.getAuthorizeUrl(ctx, next);
+        // const provider = await this.apiAsClient.getAuthorizeUrlForLogin(ctx, next);
         //TODO conbine url and redirect.
-        this.apiAsClient.getAuthorizeUrl(ctx, async () => {
+        this.apiAsClient.getAuthorizeUrlForLogin(ctx, async () => {
             if(ctx.state.oauth.result) {
                 ctx.res.redirect(ctx.state.oauth.url);
             }

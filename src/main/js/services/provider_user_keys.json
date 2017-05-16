@@ -1,0 +1,16 @@
+{
+    "github": {
+        "username": "login",
+        "providerUserKey": "id",
+        "clientUserKey": "email",
+        "avatar": "avatar_url",
+        "alias": "name"
+    },
+    "wechat": {
+        "username": "unionid",
+        "providerUserKey": "unionid",
+        "clientUserKey": "openid",
+        "avatar": "headimgurl",
+        "alias": "nickname"
+    }
+}

@@ -54,13 +54,7 @@ export default class ModelClass {
             }
         }
 
-        this.delegate.sync({force: false})
-            .then(() => {
-                this.logger.info('Connected table ' + options.tableName);
-            }).catch((e) => {
-                this.logger.error('Error while connecting table ' + options.tableName + ', cause: ' + e.message);
-            }
-        );
+        this.connect(options.tableName);
 
         for (const fn in this.delegate) {
             if (this.delegate[fn] instanceof Function) {
@@ -69,5 +63,14 @@ export default class ModelClass {
                 };
             }
         }
+    }
+
+    connect = async () => {
+        return await this.delegate.sync({force: false})
+            .then(r => {
+                this.logger.info('Connected table ' + r.$schema + '.' + r.tableName);
+                return r;
+            })
+            .catch(e => this.logger.error('Error while connecting table, cause: ' + e.message));
     }
 }

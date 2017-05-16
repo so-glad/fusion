@@ -17,7 +17,8 @@ import OAuthCodeClass from './models/OAuthCode';
 import OAuthAccessTokenClass from './models/OAuthAccessToken';
 import OAuthRefreshTokenClass from './models/OAuthRefreshToken';
 import OAuthProviderClass from './models/OAuthProvider';
-import OAuthProviderUser from './models/OAuthProviderUser';
+import OAuthProviderAccessClass from './models/OAuthProviderAccess';
+import OAuthProviderUserClass from './models/OAuthProviderUser';
 import UserAgentClass from './models/UserAgent';
 //Services
 import OAuthServerService from './services/OAuthServer';
@@ -76,7 +77,11 @@ const configModels = (databases) => {
     const OAuthRefreshToken = new OAuthRefreshTokenClass(databases.common, {});
 
     const OAuthProvider = new OAuthProviderClass(databases.common, {});
-    OAuthProviderUser.addBelongTo(User.delegate, 'user', 'user_id');
+    OAuthProviderAccessClass.addBelongTo(User.delegate, 'user', 'user_id');
+    OAuthProviderAccessClass.addBelongTo(OAuthProvider.delegate, 'providerType', 'type');
+    OAuthProviderAccessClass.addBelongTo(OAuthProvider.delegate, 'providerClient', 'client_id');
+    OAuthProviderUserClass.addBelongTo(User.delegate, 'user', 'user_id');
+
     return {
         Role: Role,
         User: User,
@@ -85,13 +90,13 @@ const configModels = (databases) => {
         OAuthAccessToken: OAuthAccessToken,
         OAuthRefreshToken: OAuthRefreshToken,
         OAuthProvider: OAuthProvider,
-        UserAgent: UserAgent
+        UserAgent: UserAgent,
+        OAuthProviderAccess: (options) => new OAuthProviderAccessClass(databases.common, options||{}),
+        OAuthProviderUser: (options) => new OAuthProviderUserClass(databases.common, options||{})
     };
 };
 
 export default class Container extends Context {
-
-    callbacks = [];
 
     constructor(config) {
         super(config);
@@ -114,7 +119,9 @@ export default class Container extends Context {
             {type: Object.keys(config.client), clientId: Object.values(config.client)}});
 
         this.register('service.auth.client', new OAuthProviderService({
-            models: models,
+            accessModelClass: models.OAuthProviderAccess,
+            userModelClass: models.OAuthProviderUser,
+            localUserModel: models.User,
             logger: defaultLogging,
             providers: providers
         }))

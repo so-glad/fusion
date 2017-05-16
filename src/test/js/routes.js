@@ -16,11 +16,13 @@ export default class Router extends KoaRouter {
         this.get('/user', async(ctx) => await webAuth.user(ctx));
         this.get('/client', async(ctx) => await webAuth.client(ctx));
         this.get('/logout', webAuth.logout);
+        this.get('/:provider/login', async() => {});
+        this.get('/:provider/callback', async() => {});
         const apiAuth = container.module('api.auth.server');
         this.post('/oauth/token', async (ctx) => await apiAuth.token(ctx));
         this.post('/oauth/authorize', apiAuth.authorize);
         const apiClient = container.module('api.auth.client');
-        this.get('/oauth/:provider/authorize', async (ctx) => await apiClient.getAuthorizeUrl(ctx));
-        this.get('/oauth/:provider/callback', async (ctx) => await apiClient.getAccessTokenByCode(ctx));
+        this.get('/oauth/:provider/authorize', async (ctx) => await apiClient.getAuthorizeUrlForLogin(ctx));
+        this.get('/oauth/:provider/callback', async (ctx) => await apiClient.getUserByProviderCode(ctx));
     }
 }

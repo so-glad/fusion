@@ -23,10 +23,9 @@ export default class KoaOAuthClient {
         delete options.logger;
     }
 
-    getAuthorizeUrl = async (ctx, next) => {
+    getAuthorizeUrlForLogin = async (ctx, next) => {
         const type = ctx.params.provider;
-        //TODO Add params, e.g. state.
-        const authorizeUrl = this.service.generateAuthorizeUrl(type, 'user');
+        const authorizeUrl = await this.service.generateAuthorizeUrl(type, 'login');
         if (!next) {
             ctx.response.header['content-type'] = 'application/json;charset=utf-8';
             ctx.body = {result: true, url: authorizeUrl, type: type};
@@ -36,14 +35,31 @@ export default class KoaOAuthClient {
         }
     };
 
-    getAccessTokenByCode = async (ctx, next) => {
+    getUserByProviderCode = async (ctx, next) => {
         //TODO Verify state.
         const type = ctx.params.provider;
+        if (ctx.request.query.error) {
+            this.logger.error(ctx.request.query);
+            ctx.status = 403;
+            return;
+        }
         const code = ctx.request.query.code;
         const state = ctx.request.query.state;
-        const accessToken = await this.service.getAccessTokenByCode(type, code, state);
-        const result = accessToken.error ? {result: false, cause: accessToken, type: type}
-            : {result: true, token: accessToken, type: type};
+        let result = null;
+        try {
+            const {error, accessToken} = await this.service.getAccessTokenByCode(type, code, state);
+            if (error) {
+                this.logger.error(error);
+                result = {result: false, cause: error, provider: type};
+            } else {
+                const user = await this.service.getUserByAccessToken(type, accessToken);
+                result = (user && user.id) ? {result: true, user: user, provider: type}
+                    : {result: false, cause: accessToken, provider: type};
+            }
+        } catch (e) {
+            this.logger.error(e);
+            result = {result: false, cause: e, provider: type};
+        }
         if (!next) {
             ctx.response.header['content-type'] = 'application/json;charset=utf-8';
             ctx.body = result;

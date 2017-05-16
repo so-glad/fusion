@@ -9,17 +9,17 @@
 import Sequelize from 'sequelize';
 
 import ModelClass from './ModelClass';
- 
+
 export default class OAuthProviderUser extends ModelClass {
 
     static belongsToDefines = [];
 
     static addBelongTo = (type, as, foreignKey) => {
-        OAuthProviderUser.belongsToDefines.push({type: type, as: as, foreignKey: foreignKey})
+        OAuthProviderUser.belongsToDefines.push({type: type, as: as, foreignKey: foreignKey});
     };
 
     get name() {
-        return 'oauth_provider';
+        return 'oauth_provider_user';
     }
 
     get belongsToDefine() {
@@ -42,44 +42,27 @@ export default class OAuthProviderUser extends ModelClass {
 
     get fieldsDefine() {
         return {
-            clientUserKey: {
-                type: Sequelize.STRING,
-                field: 'client_user_key',
-                primaryKey: true
-            },
-            holderUserKey: {
-                type: Sequelize.STRING,
-                field: 'holder_user_key',
-                primaryKey: true
-            },
             providerUserKey: {
                 type: Sequelize.STRING,
-                field: 'provider_user_key'
+                field: 'provider_user_key',
+                primaryKey: true
+            },
+            username: {
+                type: Sequelize.STRING,
+                field: 'username'
             },
             revoked: {
                 type: Sequelize.BOOLEAN,
                 field: 'revoked',
                 defaultValue: false
             },
-            accessToken: {
-                type: Sequelize.STRING,
-                field: 'access_token'
+            clientUserKeys: {
+                type: Sequelize.JSON,
+                field: 'client_user_keys',
             },
-            accessTime: {
-                type: Sequelize.INTEGER,
-                field: 'access_time'
-            },
-            refreshToken: {
-                type: Sequelize.STRING,
-                field: 'refresh_token'
-            },
-            refreshTime: {
-                type: Sequelize.INTEGER,
-                field: 'refresh_time'
-            },
-            scope: {
-                type: Sequelize.STRING,
-                field: 'scope'
+            payload: {
+                type: Sequelize.JSON,
+                field: 'payload'
             }
         };
     }

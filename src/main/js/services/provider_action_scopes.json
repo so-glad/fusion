@@ -1,0 +1,11 @@
+{
+    "default": {
+        "login": "user"
+    },
+    "github": {
+        "login": "user:email"
+    },
+    "weibo": {
+        "login": ""
+    }
+}
