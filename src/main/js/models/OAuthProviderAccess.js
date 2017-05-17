@@ -46,6 +46,10 @@ export default class OAuthProviderAccess extends ModelClass {
 
     get fieldsDefine() {
         return {
+            type: {
+                type: Sequelize.STRING,
+                field: 'type'
+            },
             action: {
                 type: Sequelize.STRING,
                 field: 'action'

@@ -2,10 +2,10 @@
     "default": {
         "login": "user"
     },
-    "github": {
+    "github_web": {
         "login": "user:email"
     },
-    "weibo": {
-        "login": ""
+    "weibo_web": {
+        "login": "email"
     }
 }

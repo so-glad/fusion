@@ -12,7 +12,6 @@ import log4js from 'koa-log4';
 
 import cron from 'cron';
 
-import providerUrl from './provider_urls';
 import providerActionScopes from './provider_action_scopes';
 import providerUserKeys from './provider_user_keys';
 
@@ -22,33 +21,45 @@ import {promisefy} from '../utils';
 export default class OAuthProviderService {
 
     accessModelClass = null;
+
     providerUserModels = [];
+
     localUserModel = null;
+
     handlers = [];
+
     logger = console;
 
     constructor(options) {
-        this.accessModelClass = options.accessModelClass;
-        this.localUserModel = options.localUserModel;
         this.logger = options.logger ? log4js.getLogger(options.logger) : this.logger;
+        this.localUserModel = options.localUserModel;
 
-        const userModelClass = options.userModelClass;
-        for (const index in options.providers) {
-            const provider = options.providers[index];
-            this.handlers[provider.type] = new oauth.OAuth2(provider.clientId, provider.clientSecret,
-                '',
-                providerUrl[provider.type].authorize,
-                providerUrl[provider.type].token,
-                {});
-            this.providerUserModels[provider.type] =
-                new userModelClass({tableName: 'oauth_provider_user_' + provider.type});
-        }
-
+        this.accessModelClass = options.accessModelClass;
         new cron.CronJob('0 0 0 * * *', () => {
             this.accessModel =
                 new this.accessModelClass({tableName: 'oauth_provider_access_' + new Date().format('yyyyMMdd')});
         }, () => {
         }, true, 'Asia/Shanghai', null, true);
+
+        const userModelClass = options.userModelClass;
+        for (const index in options.providers) {
+            const provider = options.providers[index];
+            if(!this.providerUserModels[provider.type]){
+                this.providerUserModels[provider.type] =
+                    new userModelClass({tableName: 'oauth_provider_user_' + provider.type});
+            }
+            const handler = this.handlers[provider.type + '_' + provider.key] =
+                new oauth.OAuth2(provider.clientId, provider.clientSecret,
+                    '',
+                    provider.authorizeUrl,
+                    provider.tokenUrl,
+                    {}
+                );
+            handler.setAuthMethod(providerUserKeys[provider.type + '_' + provider.key].tokenType);
+            handler.type = provider.type;
+            handler.redirect = provider.redirectUrl;
+            handler.userUrl = provider.userUrl;
+        }
     }
 
     generateAuthorizeUrl = async (type, action, user) => {
@@ -71,6 +82,7 @@ export default class OAuthProviderService {
             action: action, scope: scope, state: state, timestamp: now
         });
         params.state = state;
+        params.redirect_uri = handler.redirect;
         return handler.getAuthorizeUrl(params);
     };
 
@@ -89,15 +101,16 @@ export default class OAuthProviderService {
         if (state) {
             params.state = state;
         }
+        params.redirect_uri = handler.redirect;
         const [accessToken, refreshToken, others] =
             await promisefy(handler, handler.getOAuthAccessToken)(code, params);
         if (!accessToken && others) {
             return others;//Some error is stored in others;
         } else {
             access.accessToken = accessToken;
-            // access.accessTime = others.accessTokenExpiresAt;
+            access.accessTime = others.expires_in;
             access.refreshToken = refreshToken;
-            // access.refreshTime = others.refreshTokenExpiresAt;
+            access.refreshTime = others.remind_in;
             return await access.save();
         }
     };
@@ -105,11 +118,19 @@ export default class OAuthProviderService {
     getUserByAccessToken = async (type, accessToken) => {
         const keys = providerUserKeys[type];
         const handler = this.handlers[type];
-        const [userString] = await promisefy(handler, handler.get)(providerUrl[type].user, accessToken);
+        const urls = handler.userUrl.split(';');
+        const handlerGetAsync = promisefy(handler, handler.get);
+        if(urls.length > 1) {
+            const [uidString] = await handlerGetAsync(urls[0], accessToken);
+            const uidObj = JSON.parse(uidString);
+            urls.shift();
+            urls[0] = urls[0] + '?' + Object.keys(uidObj)[0] + '=' + Object.values(uidObj)[0];
+        }
+        const [userString] = await promisefy(handler, handler.get)(urls[0], accessToken);
         const user = JSON.parse(userString);
         const clientUserKeySingleJson = {};
         clientUserKeySingleJson[handler._clientId] = user[keys.clientUserKey];
-        const [providerUser, created] = await this.providerUserModels[type].findOrCreate({
+        const [providerUser, created] = await this.providerUserModels[handler.type].findOrCreate({
             where: {providerUserKey: user[keys.providerUserKey] + ''}, defaults: {
                 clientUserKeys: clientUserKeySingleJson,
                 username: user[keys.username],
@@ -127,6 +148,8 @@ export default class OAuthProviderService {
             await providerUser.save();
             return localUser;
         } else {
+            providerUser.clientUserKeys[handler._clientId] = user[keys.clientUserKey];
+            await providerUser.save();
             return await providerUser.getUser();
         }
     }

@@ -7,9 +7,9 @@
     },
     "client": {
         "web": "10000001",
-        "github": "70aa74f28e9cdbdf98bf",
-        "weibo": "",
-        "wechat": ""
+        "github": {"web": "70aa74f28e9cdbdf98bf"},
+        "weibo": {"web": "1425911063"},
+        "wechat": {"web": ""}
     },
     "log4js": {
         "cwd": "var/logs",

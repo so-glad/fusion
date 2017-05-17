@@ -1,10 +1,18 @@
 {
-    "github": {
+    "github_web": {
         "username": "login",
         "providerUserKey": "id",
         "clientUserKey": "email",
         "avatar": "avatar_url",
         "alias": "name"
+    },
+    "weibo_web": {
+        "tokenType": "OAuth2",
+        "username": "domain",
+        "providerUserKey": "idstr",
+        "clientUserKey": "weihao",
+        "avatar": "avatar_hd",
+        "alias": "screen_name"
     },
     "wechat": {
         "username": "unionid",

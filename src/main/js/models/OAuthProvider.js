@@ -66,6 +66,10 @@ export default class OAuthProvider extends ModelClass {
             tokenUrl: {
                 type: Sequelize.STRING,
                 field: 'token_url'
+            },
+            userUrl: {
+                type: Sequelize.STRING,
+                field: 'user_url'
             }
         };
     }

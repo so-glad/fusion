@@ -78,7 +78,6 @@ const configModels = (databases) => {
 
     const OAuthProvider = new OAuthProviderClass(databases.common, {});
     OAuthProviderAccessClass.addBelongTo(User.delegate, 'user', 'user_id');
-    OAuthProviderAccessClass.addBelongTo(OAuthProvider.delegate, 'providerType', 'type');
     OAuthProviderAccessClass.addBelongTo(OAuthProvider.delegate, 'providerClient', 'client_id');
     OAuthProviderUserClass.addBelongTo(User.delegate, 'user', 'user_id');
 
@@ -91,9 +90,26 @@ const configModels = (databases) => {
         OAuthRefreshToken: OAuthRefreshToken,
         OAuthProvider: OAuthProvider,
         UserAgent: UserAgent,
-        OAuthProviderAccess: (options) => new OAuthProviderAccessClass(databases.common, options||{}),
-        OAuthProviderUser: (options) => new OAuthProviderUserClass(databases.common, options||{})
+        OAuthProviderAccess: (options) => new OAuthProviderAccessClass(databases.common, options || {}),
+        OAuthProviderUser: (options) => new OAuthProviderUserClass(databases.common, options || {})
     };
+};
+
+const configOAuthClients = async (clientConfig, providerModel) => {
+    let providers = [];
+    for (const type in clientConfig) {
+        const clients = clientConfig[type];
+        const pros = await providerModel.findAll({where: {type: type, clientId: Object.values(clients)}});
+        for (const key in clients) {
+            for (const i in pros) {
+                if (clients[key] === pros[i].clientId) {
+                    pros[i].key = key;
+                }
+            }
+        }
+        providers = providers.concat(pros);
+    }
+    return providers;
 };
 
 export default class Container extends Context {
@@ -114,31 +130,31 @@ export default class Container extends Context {
         const models = this.module('models');
         const config = this.config;
         const client = await models.OAuthClient.findOne({where: {id: config.client.web}});
-        this.register('oauth.client.web', client);
-        const providers = await models.OAuthProvider.findAll({where:
-            {type: Object.keys(config.client), clientId: Object.values(config.client)}});
+        const providers = await configOAuthClients(config.client, models.OAuthProvider);
 
-        this.register('service.auth.client', new OAuthProviderService({
-            accessModelClass: models.OAuthProviderAccess,
-            userModelClass: models.OAuthProviderUser,
-            localUserModel: models.User,
-            logger: defaultLogging,
-            providers: providers
-        }))
-        .register('service.auth.server', new OAuthServerService({
-            models: models,
-            logger: defaultLogging
-        }))
-        .register('api.auth.client', new KoaOAuthClient({
-            service: this.module('service.auth.client'),
-            logger: defaultLogging
-        }))
-        .register('api.auth.server', new KoaOAuthServer({
-            debug: false,
-            service: this.module('service.auth.server'),
-            logger: defaultLogging
-        }))
-        .register('web.auth', new KoaBrowserAuth(this));
+        this.register('oauth.client.web', client)
+            .register('service.auth.client', new OAuthProviderService({
+                accessModelClass: models.OAuthProviderAccess,
+                userModelClass: models.OAuthProviderUser,
+                localUserModel: models.User,
+                logger: defaultLogging,
+                providers: providers
+            }))
+            .register('service.auth.server', new OAuthServerService({
+                models: models,
+                logger: defaultLogging
+            }))
+            .register('api.auth.client', new KoaOAuthClient({
+                service: this.module('service.auth.client'),
+                logger: defaultLogging
+            }))
+            .register('api.auth.server', new KoaOAuthServer({
+                debug: false,
+                service: this.module('service.auth.server'),
+                logger: defaultLogging
+            }))
+            .register('web.auth', new KoaBrowserAuth(this));
+
         return this;
     };
 }
