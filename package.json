@@ -1,71 +1,70 @@
 {
-  "name": "fuxion",
-  "version": "1.0.1",
-  "description": "A framework for user authorization and authentication, principle like simov/grant or jaredhanson/passport, but also including server schema adjust refered from oauthjs/koa-oauth-server,  powered by oauth2, javascript",
-  "main": "lib/index.js",
-  "scripts": {
-    "build": "babel src/main/js -d lib",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "module": "babel src/main/js -d lib --presets es2015,stage-0 --plugins transform-runtime",
-    "app.lib": "babel src/main/js -d dist/lib --presets es2015,stage-0 --plugins transform-runtime",
-    "app.app": "babel src/test/js/index.js -o dist/lib/main.js --presets es2015,stage-0 --plugins transform-runtime && babel src/test/js/routes.js -o dist/lib/routes.js --presets es2015,stage-0 --plugins transform-runtime",
-    "app.etc": "babel src/test/web -D -d dist/web && babel src/test/resources -D -d dist/etc",
-    "app.env": "cp package.json dist/ && mkdir -p dist/var/logs",
-    "app": "npm run app.lib && npm run app.app && npm run app.etc && npm run app.env",
-    "start": "node lib/main.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/so-glad/fusion.git"
-  },
-  "keywords": [
-    "passport",
-    "user",
-    "auth",
-    "server",
-    "oauth"
-  ],
-  "author": "palmtale <palmtale@glad.so>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/so-glad/fusion/issues"
-  },
-  "homepage": "https://github.com/so-glad/fusion#readme",
-  "devDependencies": {
-    "babel": "^6.23.0",
-    "babel-polyfill": "^6.23.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-cli": "^6.24.1",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-preset-stage-0": "^6.24.1",
-    "babel-eslint": "^7.2.3",
-    "debug": "^2.6.6",
-    "pg": "^6.1.5",
-    "redis": "^2.7.1",
-    "connect": "^3.6.1",
-    "express": "^4.15.2",
-    "hapi": "^16.1.1",
-    "koa": "^2.2.0",
-    "koa-bodyparser": "^4.2.0",
-    "koa-log4": "^2.2.1",
-    "koa-router": "^7.1.1",
-    "koa-json": "^2.0.2",
-    "koa-send": "^4.1.0",
-    "koa-session": "5.0.0",
-    "koa-csrf": "^3.0.5",
-    "mocha": "^3.3.0",
-    "chai": "^3.5.0",
-    "mochawesome": "^2.1.0"
-  },
-  "dependencies": {
-    "bcrypt": "^1.0.2",
-    "cron": "^1.2.1",
-    "lodash": "^4.17.4",
-    "oauth": "^0.9.15",
-    "oauth2-server": "^3.0.0-b4",
-    "sequelize": "^3.30.4"
-  },
-  "publishConfig": {
-    "registry": "https://pub.glad.so/repository/sonpm-snapshot/"
-  }
+    "name": "fuxion",
+    "version": "1.0.1",
+    "description": "A framework for user authorization and authentication, principle like simov/grant or jaredhanson/passport, but also including server schema adjust refered from oauthjs/koa-oauth-server,  powered by oauth2, javascript",
+    "main": "lib/index.js",
+    "scripts": {
+        "build": "babel src/main/js -d lib",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "module": "babel src/main/js -d lib --presets es2015,stage-0 --plugins transform-runtime",
+        "app.lib": "babel src/main/js -d dist/lib --presets es2015,stage-0 --plugins transform-runtime",
+        "app.app": "babel src/test/js/index.js -o dist/lib/main.js --presets es2015,stage-0 --plugins transform-runtime && babel src/test/js/routes.js -o dist/lib/routes.js --presets es2015,stage-0 --plugins transform-runtime",
+        "app.etc": "babel src/test/web -D -d dist/web && babel src/test/resources -D -d dist/etc",
+        "app.env": "cp package.json dist/ && mkdir -p dist/var/logs",
+        "app": "npm run app.lib && npm run app.app && npm run app.etc && npm run app.env",
+        "start": "node lib/main.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/so-glad/fusion.git"
+    },
+    "keywords": [
+        "passport",
+        "user",
+        "auth",
+        "server",
+        "oauth"
+    ],
+    "author": "palmtale <palmtale@glad.so>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/so-glad/fusion/issues"
+    },
+    "homepage": "https://github.com/so-glad/fusion#readme",
+    "devDependencies": {
+        "babel": "^6.23.0",
+        "babel-polyfill": "^6.23.0",
+        "babel-plugin-transform-runtime": "^6.23.0",
+        "babel-cli": "^6.24.1",
+        "babel-preset-es2015": "^6.24.1",
+        "babel-preset-stage-0": "^6.24.1",
+        "babel-eslint": "^7.2.3",
+        "debug": "^2.6.6",
+        "pg": "^6.1.5",
+        "redis": "^2.7.1",
+        "connect": "^3.6.1",
+        "express": "^4.15.2",
+        "hapi": "^16.1.1",
+        "koa": "^2.2.0",
+        "koa-bodyparser": "^4.2.0",
+        "koa-log4": "^2.2.1",
+        "koa-router": "^7.1.1",
+        "koa-json": "^2.0.2",
+        "koa-send": "^4.1.0",
+        "koa-session": "5.0.0",
+        "koa-csrf": "^3.0.5",
+        "mocha": "^3.3.0",
+        "chai": "^3.5.0",
+        "mochawesome": "^2.1.0"
+    },
+    "dependencies": {
+        "bcrypt": "^1.0.2",
+        "cron": "^1.2.1",
+        "lodash": "^4.17.4",
+        "oauth2-server": "^3.0.0-b4",
+        "sequelize": "^3.30.4"
+    },
+    "publishConfig": {
+        "registry": "https://pub.glad.so/repository/sonpm-snapshot/"
+    }
 }

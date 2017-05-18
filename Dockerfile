@@ -7,7 +7,7 @@ LABEL vendor=Glad.so
 MAINTAINER Palmtale <palmtale@glad.so>
 
 ENV APP_HOME=/usr/local \
-    APP_ENV=1.0.1 \
+    APP_ENV=1.0.2 \
     APP_PORT=5000
 
 COPY dist $APP_HOME/
@@ -16,7 +16,6 @@ RUN set -ex \
     && cd $APP_HOME \
     && sed -i '4s/src\/test\/js/lib/' $APP_HOME/etc/config.json \
     && sed -i '5s/src\/test\/resources/etc/' $APP_HOME/etc/config.json \
-    && sed -i '6s/src\/test\/web/web/' $APP_HOME/etc/config.json \
     && sed -i '6s/src\/test\/web/web/' $APP_HOME/etc/config.json \
     && sed -i '52s/..\/..\/main\/js/./' $APP_HOME/lib/main.js \
     && sed -i '54s/resources/etc/' $APP_HOME/lib/main.js \

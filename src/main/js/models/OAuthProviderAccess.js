@@ -77,6 +77,11 @@ export default class OAuthProviderAccess extends ModelClass {
             refreshTime: {
                 type: Sequelize.INTEGER,
                 field: 'refresh_time'
+            },
+            userId: {
+                type: Sequelize.STRING,
+                field: 'uid',
+                allowNull: true
             }
         };
     }

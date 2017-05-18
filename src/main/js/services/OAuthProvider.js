@@ -7,16 +7,12 @@
 
 
 import crypto from 'crypto';
-import oauth from 'oauth';
 import log4js from 'koa-log4';
-
 import cron from 'cron';
 
+import OAuth2 from '../client/OAuth2';
 import providerActionScopes from './provider_action_scopes';
 import providerUserKeys from './provider_user_keys';
-
-import {promisefy} from '../utils';
-
 
 export default class OAuthProviderService {
 
@@ -49,27 +45,25 @@ export default class OAuthProviderService {
                     new userModelClass({tableName: 'oauth_provider_user_' + provider.type});
             }
             const handler = this.handlers[provider.type + '_' + provider.key] =
-                new oauth.OAuth2(provider.clientId, provider.clientSecret,
+                new OAuth2(provider.clientId, provider.clientSecret,
                     '',
                     provider.authorizeUrl,
-                    provider.tokenUrl,
-                    {}
-                );
-            handler.setAuthMethod(providerUserKeys[provider.type + '_' + provider.key].tokenType);
+                    provider.tokenUrl);
             handler.type = provider.type;
-            handler.redirect = provider.redirectUrl;
+            handler.key = provider.key;
+            handler.redirectUri = provider.redirectUrl;
             handler.userUrl = provider.userUrl;
         }
     }
 
-    generateAuthorizeUrl = async (type, action, user) => {
-        const handler = this.handlers[type];
+    generateAuthorizeUrl = async (typeKey, action, user) => {
+        const handler = this.handlers[typeKey];
         if (!handler) {
-            this.logger.error('No handler for type ' + type);
+            this.logger.error('No handler for type ' + typeKey);
             return null;
         }
         const params = {};
-        const scope = providerActionScopes[type][action];
+        const scope = providerActionScopes[handler.type][action];
         if (scope) {
             params.scope = scope;
         }
@@ -78,17 +72,17 @@ export default class OAuthProviderService {
         const state = crypto.createHash('sha256')
             .update((user ? user.id : '') + action + scope + now.getTime(), 'utf8').digest('hex');
         this.accessModel.create({
-            type: type, client_id: handler._clientId, user_id: (user ? user.id : null),
+            type: typeKey, client_id: handler._clientId, user_id: (user ? user.id : null),
             action: action, scope: scope, state: state, timestamp: now
         });
         params.state = state;
-        params.redirect_uri = handler.redirect;
+        params.redirect_uri = handler.redirectUri;
         return handler.getAuthorizeUrl(params);
     };
 
-    getAccessTokenByCode = async (type, code, state, user) => {
-        const handler = this.handlers[type];
-        const where = {type: type, state: state, client_id: handler._clientId};
+    getAccessTokenByCode = async (typeKey, code, state, user) => {
+        const handler = this.handlers[typeKey];
+        const where = {type: typeKey, state: state, client_id: handler._clientId};
         if (user) {
             where.user_id = user.id;
         }
@@ -102,31 +96,29 @@ export default class OAuthProviderService {
             params.state = state;
         }
         params.redirect_uri = handler.redirect;
-        const [accessToken, refreshToken, others] =
-            await promisefy(handler, handler.getOAuthAccessToken)(code, params);
-        if (!accessToken && others) {
-            return others;//Some error is stored in others;
+        params.code = code;
+        const [result,] =
+            await handler.getOAuthAccessToken(params);
+        if (result.error) {
+            return result;//Some error is stored in others;
         } else {
-            access.accessToken = accessToken;
-            access.accessTime = others.expires_in;
-            access.refreshToken = refreshToken;
-            access.refreshTime = others.remind_in;
-            return await access.save();
+            access.accessToken = result.access_token || result.accessToken;
+            access.accessTime = result.expires_in;
+            access.refreshToken = result.refresh_token;
+            access.refreshTime = result.remind_in;
+            access.userId = result.uid || result.openid || result.userId || result.user_id;
+            await access.save();
+            const key = result.uid ? 'uid' : result.openid ? 'openid' : result.userId ? 'userId' : result.user_id ? 'user_id' : '';
+            access.params = () => ({access_token: access.accessToken, [key]: access.userId});
+            return access;
+
         }
     };
 
-    getUserByAccessToken = async (type, accessToken) => {
-        const keys = providerUserKeys[type];
+    getUserByAccessToken = async (type, access) => {
         const handler = this.handlers[type];
-        const urls = handler.userUrl.split(';');
-        const handlerGetAsync = promisefy(handler, handler.get);
-        if(urls.length > 1) {
-            const [uidString] = await handlerGetAsync(urls[0], accessToken);
-            const uidObj = JSON.parse(uidString);
-            urls.shift();
-            urls[0] = urls[0] + '?' + Object.keys(uidObj)[0] + '=' + Object.values(uidObj)[0];
-        }
-        const [userString] = await promisefy(handler, handler.get)(urls[0], accessToken);
+        const keys = providerUserKeys[handler.type];
+        const [userString] = await handler.get(handler.userUrl, access);
         const user = JSON.parse(userString);
         const clientUserKeySingleJson = {};
         clientUserKeySingleJson[handler._clientId] = user[keys.clientUserKey];

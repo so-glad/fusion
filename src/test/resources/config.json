@@ -9,7 +9,7 @@
         "web": "10000001",
         "github": {"web": "70aa74f28e9cdbdf98bf"},
         "weibo": {"web": "1425911063"},
-        "wechat": {"web": ""}
+        "wechat": {"web": "wxf0e81c3bee622d60"}
     },
     "log4js": {
         "cwd": "var/logs",

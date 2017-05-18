@@ -1,12 +1,12 @@
 {
-    "github_web": {
+    "github": {
         "username": "login",
         "providerUserKey": "id",
         "clientUserKey": "email",
         "avatar": "avatar_url",
         "alias": "name"
     },
-    "weibo_web": {
+    "weibo": {
         "tokenType": "OAuth2",
         "username": "domain",
         "providerUserKey": "idstr",

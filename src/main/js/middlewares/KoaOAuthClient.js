@@ -47,14 +47,14 @@ export default class KoaOAuthClient {
         const state = ctx.request.query.state;
         let result = null;
         try {
-            const {error, accessToken} = await this.service.getAccessTokenByCode(type, code, state);
-            if (error) {
-                this.logger.error(error);
-                result = {result: false, cause: error, provider: type};
+            const access = await this.service.getAccessTokenByCode(type, code, state);
+            if (access.error) {
+                this.logger.error(access.error);
+                result = {result: false, cause: access.error, provider: type};
             } else {
-                const user = await this.service.getUserByAccessToken(type, accessToken);
+                const user = await this.service.getUserByAccessToken(type, access.params());
                 result = (user && user.id) ? {result: true, user: user, provider: type}
-                    : {result: false, cause: accessToken, provider: type};
+                    : {result: false, cause: 'Cannot get user by accessToken', provider: type};
             }
         } catch (e) {
             this.logger.error(e);

@@ -2,10 +2,13 @@
     "default": {
         "login": "user"
     },
-    "github_web": {
+    "github": {
         "login": "user:email"
     },
-    "weibo_web": {
+    "weibo": {
         "login": "email"
+    },
+    "wechat": {
+        "login": "snsuser_login"
     }
 }
