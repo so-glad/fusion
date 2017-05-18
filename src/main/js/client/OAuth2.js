@@ -131,6 +131,14 @@ export default class OAuth2Client {
         this._responseType = responseType;
     }
 
+    set clientIdName (clientIdName) {
+        this._clientIdName = clientIdName;
+    }
+
+    set clientSecretName (clientSecretName) {
+        this._clientSecretName = clientSecretName;
+    }
+
     set redirectUri(redirectUri) {
         this._redirectUri = redirectUri;
     }

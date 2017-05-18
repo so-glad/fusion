@@ -15,6 +15,8 @@
         "alias": "screen_name"
     },
     "wechat": {
+        "clientIdName": "appid",
+        "clientIdSecret": "secret",
         "username": "unionid",
         "providerUserKey": "unionid",
         "clientUserKey": "openid",

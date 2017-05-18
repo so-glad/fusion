@@ -14,6 +14,25 @@ import OAuth2 from '../client/OAuth2';
 import providerActionScopes from './provider_action_scopes';
 import providerUserKeys from './provider_user_keys';
 
+const providerHandler = (provider) => {
+    const keys = providerUserKeys[provider.type];
+    const handler = new OAuth2(provider.clientId, provider.clientSecret,
+            '',
+            provider.authorizeUrl,
+            provider.tokenUrl);
+    if(keys.clientIdName) {
+        handler.clientIdName = keys.clientIdName;
+    }
+    if(keys.clientSecretName) {
+        handler.clientSecretName = keys.clientSecretName;
+    }
+    handler.type = provider.type;
+    handler.key = provider.key;
+    handler.redirectUri = provider.redirectUrl;
+    handler.userUrl = provider.userUrl;
+    return handler;
+};
+
 export default class OAuthProviderService {
 
     accessModelClass = null;
@@ -36,23 +55,17 @@ export default class OAuthProviderService {
                 new this.accessModelClass({tableName: 'oauth_provider_access_' + new Date().format('yyyyMMdd')});
         }, () => {
         }, true, 'Asia/Shanghai', null, true);
-
         const userModelClass = options.userModelClass;
         for (const index in options.providers) {
             const provider = options.providers[index];
+
             if(!this.providerUserModels[provider.type]){
                 this.providerUserModels[provider.type] =
                     new userModelClass({tableName: 'oauth_provider_user_' + provider.type});
             }
-            const handler = this.handlers[provider.type + '_' + provider.key] =
-                new OAuth2(provider.clientId, provider.clientSecret,
-                    '',
-                    provider.authorizeUrl,
-                    provider.tokenUrl);
-            handler.type = provider.type;
-            handler.key = provider.key;
-            handler.redirectUri = provider.redirectUrl;
-            handler.userUrl = provider.userUrl;
+
+            this.handlers[provider.type + '_' + provider.key] =
+                providerHandler(provider);
         }
     }
 
