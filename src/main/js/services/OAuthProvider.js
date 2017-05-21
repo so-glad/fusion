@@ -10,7 +10,7 @@ import crypto from 'crypto';
 import log4js from 'koa-log4';
 import cron from 'cron';
 
-import {OAuth2} from 'oauth2client';
+import {OAuth2} from 'oauth2-consumer';
 import providerActionScopes from './provider_action_scopes';
 import providerUserKeys from './provider_user_keys';
 

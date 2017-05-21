@@ -7,16 +7,10 @@
 
 
 import log4js from 'koa-log4';
-import ProxyGrantType from './ProxyGrantType';
 
-import NodeOAuthServer,
-{
-    InvalidGrantError,
-    Request,
-    Response,
-    UnauthorizedRequestError
-} from 'oauth2-server';
+import {OAuth2Server, OAuth2Errors, Parameter} from 'oauth2-producer';
 
+const {UnauthorizedRequestError, InvalidGrantError} = OAuth2Errors;
 
 const convertToken = (token) => {
     if (!token) {
@@ -34,28 +28,27 @@ const convertToken = (token) => {
 };
 
 const convertError = (error) => {
-    const resultError = {};
+    const resultError = {body: {error: false, message: '', code: 200}, status: 200};
     if (error) {
-        resultError.error = true;
-        resultError.message = error.message;
+        resultError.body.error = true;
+        resultError.body.message = error.message;
     }
     if (error instanceof UnauthorizedRequestError) {
         resultError.status = error.status;
-        resultError.code = error.code;
+        resultError.body.code = error.code;
     }
     if (error instanceof InvalidGrantError
         && error.message === 'Invalid grant: user credentials are invalid') {
         resultError.status = error.status = 401;
-        resultError.code = error.code = 401;
-        resultError.statusCode = error.statusCode = 401;
+        resultError.body.code = error.code = 401;
     }
     return resultError;
 };
 
-const transferResponse = (response, res) => {
-    res.status = response.statusCode;
-    for (const header in response.headers) {
-        res.header[header] = response.headers[header];
+const transferResponse = (result, res) => {
+    res.status = result.status;
+    for (const header in result.headers) {
+        res.header[header] = result.getHeader(header);
     }
 };
 
@@ -73,7 +66,7 @@ export default class KoaOAuthServer {
             : console;
         options.model = options.service;
         delete options.logger;
-        this.delegate = new NodeOAuthServer(options);
+        this.delegate = new OAuth2Server(options);
     }
 
     /**
@@ -84,22 +77,23 @@ export default class KoaOAuthServer {
      * (See: https://tools.ietf.org/html/rfc6749#section-3.1)
      */
     authorize = async (ctx, next) => {
-        const request = new Request(ctx.request);
-        const response = new Response(ctx.res);
+        const params = new Parameter(ctx.request);
+        let result = null;
         try {
-            const code = await this.delegate.authorize(request, response);
-            transferResponse(response, ctx.response);
+            result = await this.delegate.authorize(params);
+        } catch (error) {
+            result = convertError(error);
+            this.logger.error('Oauth authorize error, cause: ' + error.message
+                + ', error code: ' + error.code);
+        } finally {
+            transferResponse(result, ctx.response);
             if (next) {
-                ctx.state.oauth = {
-                    code: code
-                };
-                await next();
+                ctx.state.oauth = result.body;
+                await next(ctx);
             } else {
-                ctx.res.header('content-type', 'application/json; charset=UTF-8');
-                ctx.res.body = {code: code};
+                ctx.response.header['content-type'] = 'application/json; charset=UTF-8';
+                ctx.body = result.body;
             }
-        } catch (e) {
-            this.logger.error(e);
         }
     };
 
@@ -111,29 +105,23 @@ export default class KoaOAuthServer {
      * (See: https://tools.ietf.org/html/rfc6749#section-3.2)
      */
     token = async (ctx, next) => {
-        const request = new Request(ctx.request);
-        const response = new Response(ctx.res);
+        const params = new Parameter(ctx.request);
         let result = null;
         try {
-            const token = await this.delegate.token(request, response, {
-                extendedGrantTypes: {
-                    proxy: ProxyGrantType
-                }
-            });
-            result = convertToken(token);
+            result = await this.delegate.token(params);
+            result.body = convertToken(result.body);
         } catch (error) {
             result = convertError(error);
-            response.status = result.status;
             this.logger.error('Oauth token error, cause: ' + error.message
                 + ', error code: ' + error.statusCode);
         } finally {
-            transferResponse(response, ctx.response);
+            transferResponse(result, ctx.response);
             if (next) {
-                ctx.state.oauth = result;
+                ctx.state.oauth = result.body;
                 await next(ctx);
             } else {
                 ctx.response.header['content-type'] = 'application/json; charset=UTF-8';
-                ctx.body = result;
+                ctx.body = result.body;
             }
         }
     };
@@ -146,18 +134,24 @@ export default class KoaOAuthServer {
      * (See: https://tools.ietf.org/html/rfc6749#section-7)
      */
     authenticate = async (ctx, next) => {
-        const request = new Request(ctx.request);
+        const params = new Parameter(ctx.request);
+        let result = null;
         try {
-            const token = await this.delegate.authenticate(request);
+            result = await this.delegate.authenticate(params);
+            result.body = convertToken(result.body);
+        } catch (e) {
+            result = convertError(e);
+            this.logger.error('Oauth authenticate error, cause: ' + e.message
+                + ', error code: ' + e.code);
+        } finally {
+            transferResponse(result, ctx.response);
             if (next) {
-                ctx.state.oauth = convertToken(token);
-                await next();
+                ctx.state.oauth = result.body;
+                await next(ctx);
             } else {
                 ctx.res.header('content-type', 'application/json; charset=UTF-8');
-                ctx.res.body = convertToken(token);
+                ctx.res.body = result.body;
             }
-        } catch (e) {
-            this.logger.error(e);
         }
     };
 

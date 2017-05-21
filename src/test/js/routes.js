@@ -8,15 +8,20 @@
 
 import KoaRouter from 'koa-router';
 
+const defaultClientForGrant = (ctx, container, grant) => {
+    ctx.request.body.grant_type = grant;
+    const client = container.module('oauth.client.web');
+    ctx.request.body.client_id = client.id;
+    ctx.request.body.client_secret = client.secret;
+    ctx.request.query.provider = ctx.params.provider;
+};
+
 export default class Router extends KoaRouter {
     constructor(container) {
         super();
         const webAuth = container.module('web.auth');
         this.post('/login', async (ctx) => {
-            ctx.request.body.grant_type = 'password';
-            const client = container.module('oauth.client.web');
-            ctx.request.body.client_id = client.id;
-            ctx.request.body.client_secret = client.secret;
+            defaultClientForGrant(ctx, container, 'password');
             await apiAuth.token(ctx, webAuth.login);
         });
         this.get('/user', async (ctx) => await webAuth.user(ctx));
@@ -29,15 +34,7 @@ export default class Router extends KoaRouter {
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
                 ctx.redirect(authorizeUrl);
             } else {
-                ctx.request.query.grant_type = 'proxy';
-                const client = container.module('oauth.client.web');
-                ctx.request.query.client_id = client.id;
-                ctx.request.query.client_secret = client.secret;
-                ctx.request.query.provider = ctx.params.provider;
-                ctx.request.method = 'POST';
-                ctx.request.header['content-type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
-                ctx.request.body = ctx.request.query;
-                ctx.request.query = {};
+                defaultClientForGrant(ctx, container, 'proxy');
                 await apiAuth.token(ctx, webAuth.login);
             }
         });
@@ -54,15 +51,7 @@ export default class Router extends KoaRouter {
             ctx.body = {result: true, url: authorizeUrl, type: typeKey};
         });
         this.get('/oauth/:provider/callback', async (ctx) => {
-            ctx.request.query.grant_type = 'proxy';
-            const client = container.module('oauth.client.web');
-            ctx.request.query.client_id = client.id;
-            ctx.request.query.client_secret = client.secret;
-            ctx.request.query.provider = ctx.params.provider;
-            ctx.request.method = 'POST';
-            ctx.request.header['content-type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
-            ctx.request.body = ctx.request.query;
-            ctx.request.query = {};
+            defaultClientForGrant(ctx, container, 'proxy');
             await apiAuth.token(ctx);
         });
     }
