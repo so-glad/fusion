@@ -19,31 +19,33 @@ export default class KoaBrowserAuth {
 
     //OAuth Server actions group
     login = async (ctx, next) => {
-        ctx.request.body.grant_type = 'password';
-        ctx.request.body.client_id = this.defaultClient.clientId;
-        ctx.request.body.client_secret = this.defaultClient.clientSecret;
-        await this.apiAsServer.token(ctx, async () => {
-            if (ctx.state.oauth && ctx.state.oauth.user) {
-                if (ctx.regenerateSession) {
-                    await ctx.regenerateSession();
-                }
-                if (ctx.request.body.remember) {
-                    ctx.cookies.set('remember', ctx.state.oauth.token.accessToken, {
-                        maxAge: 86400000,
-                        httpOnly: true,
-                        signed: true
-                    });
-                }
-                ctx.session.client = ctx.state.oauth.client;
-                ctx.session.user = ctx.state.oauth.user;
+        if (ctx.state.oauth && ctx.state.oauth.user) {
+            if (ctx.regenerateSession) {
+                await ctx.regenerateSession();
             }
-            if (!next) {
-                ctx.body = ctx.state.oauth;
-                ctx.response.header['content-type'] = 'application/json;charset=UTF-8';
-            } else {
-                await next();
+            if (ctx.request.body.remember) {
+                ctx.cookies.set('remember', ctx.state.oauth.token.accessToken, {
+                    maxAge: 86400000,
+                    httpOnly: true,
+                    signed: true
+                });
             }
-        });
+            ctx.session.client = ctx.state.oauth.client;
+            ctx.session.user = ctx.state.oauth.user;
+        }
+        if (!next && ctx.state.oauth) {
+            ctx.body = ctx.state.oauth;
+            ctx.response.header['content-type'] = 'application/json;charset=UTF-8';
+        } else {
+            await next();
+        }
+
+        // ctx.request.body.grant_type = 'password';
+        // ctx.request.body.client_id = this.defaultClient.clientId;
+        // ctx.request.body.client_secret = this.defaultClient.clientSecret;
+        // await this.apiAsServer.token(ctx, async () => {
+        //
+        // });
     };
 
     user = async (ctx, next) => {

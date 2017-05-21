@@ -46,17 +46,21 @@ export default class OAuthCode extends ModelClass {
 
     get fieldsDefine() {
         return {
-            id: {
-                type: Sequelize.BIGINT,
+            code: {
+                type: Sequelize.STRING,
                 primaryKey: true,
                 autoIncrement: false,
                 defaultValue: Sequelize.DEFAULT,
-                field: 'id'
+                field: 'code'
             },
-            scopes: {
+            scope: {
                 type: Sequelize.STRING,
-                field: 'scopes',
+                field: 'scope',
                 default: '*'
+            },
+            redirectUri: {
+                type: Sequelize.STRING,
+                field: 'redirect_uri'
             },
             revoked: {
                 type: Sequelize.BOOLEAN,

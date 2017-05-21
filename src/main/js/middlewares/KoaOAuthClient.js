@@ -23,18 +23,6 @@ export default class KoaOAuthClient {
         delete options.logger;
     }
 
-    getAuthorizeUrlForLogin = async (ctx, next) => {
-        const type = ctx.params.provider;
-        const authorizeUrl = await this.service.generateAuthorizeUrl(type, 'login');
-        if (!next) {
-            ctx.response.header['content-type'] = 'application/json;charset=utf-8';
-            ctx.body = {result: true, url: authorizeUrl, type: type};
-        } else {
-            ctx.state.oauth = {result: true, url: authorizeUrl, type: type};
-            await next();
-        }
-    };
-
     getUserByProviderCode = async (ctx, next) => {
         //TODO Verify state.
         const type = ctx.params.provider;
@@ -47,7 +35,7 @@ export default class KoaOAuthClient {
         const state = ctx.request.query.state;
         let result = null;
         try {
-            const access = await this.service.getAccessTokenByCode(type, code, state);
+            const access = await this.service.exchangeAccessTokenByCode(type, code, state);
             if (access.error) {
                 this.logger.error(access.error);
                 result = {result: false, cause: access.error, provider: type};
@@ -67,5 +55,5 @@ export default class KoaOAuthClient {
             ctx.state.oauth = result;
             await next();
         }
-    }
+    };
 }

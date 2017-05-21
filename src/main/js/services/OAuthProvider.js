@@ -10,7 +10,7 @@ import crypto from 'crypto';
 import log4js from 'koa-log4';
 import cron from 'cron';
 
-import OAuth2 from '../client/OAuth2';
+import {OAuth2} from 'oauth2client';
 import providerActionScopes from './provider_action_scopes';
 import providerUserKeys from './provider_user_keys';
 
@@ -93,7 +93,7 @@ export default class OAuthProviderService {
         return handler.getAuthorizeUrl(params);
     };
 
-    getAccessTokenByCode = async (typeKey, code, state, user) => {
+    exchangeAccessTokenByCode = async (typeKey, code, state, user) => {
         const handler = this.handlers[typeKey];
         const where = {type: typeKey, state: state, client_id: handler._clientId};
         if (user) {
@@ -124,12 +124,12 @@ export default class OAuthProviderService {
             const key = result.uid ? 'uid' : result.openid ? 'openid' : result.userId ? 'userId' : result.user_id ? 'user_id' : '';
             access.params = () => ({access_token: access.accessToken, [key]: access.userId});
             return access;
-
         }
     };
 
-    getUserByAccessToken = async (type, access) => {
-        const handler = this.handlers[type];
+    /** NOT the oauth scope method, already the business api*/
+    getUserByAccessToken = async (typeKey, access) => {
+        const handler = this.handlers[typeKey];
         const keys = providerUserKeys[handler.type];
         const [userString] = await handler.get(handler.userUrl, access);
         const user = JSON.parse(userString);
@@ -143,9 +143,10 @@ export default class OAuthProviderService {
             }
         });
         if (created) {
+            //TODO Issue#1 Local user is not create, can be found if logged via other provider or signed up.
             const localUser = await this.localUserModel.create({
                 username: providerUser.username,
-                password: type,
+                password: typeKey,
                 avatar: user[keys.avatar],
                 alias: user[keys.alias]
             });

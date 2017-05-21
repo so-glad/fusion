@@ -8,24 +8,24 @@
 
 import log4js from 'koa-log4';
 import Sequelize from 'sequelize';
-
 //Models classes
+import UserAgentClass from './models/UserAgent';
+
 import RoleClass from './models/Role';
 import UserClass from './models/User';
+
 import OAuthClientClass from './models/OAuthClient';
 import OAuthCodeClass from './models/OAuthCode';
-import OAuthAccessTokenClass from './models/OAuthAccessToken';
-import OAuthRefreshTokenClass from './models/OAuthRefreshToken';
+import OAuthTokenClass from './models/OAuthToken';
+
 import OAuthProviderClass from './models/OAuthProvider';
 import OAuthProviderAccessClass from './models/OAuthProviderAccess';
 import OAuthProviderUserClass from './models/OAuthProviderUser';
-import UserAgentClass from './models/UserAgent';
 //Services
 import OAuthServerService from './services/OAuthServer';
 import OAuthProviderService from './services/OAuthProvider';
 //Server Middleware
 import KoaOAuthServer from './middlewares/KoaOAuthServer';
-import KoaOAuthClient from './middlewares/KoaOAuthClient';
 import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
 //Extra
 import KoaUserAgent from './middlewares/KoaUserAgent';
@@ -70,11 +70,9 @@ const configModels = (databases) => {
     OAuthCodeClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
     const OAuthCode = new OAuthCodeClass(databases.common, {});
 
-    OAuthAccessTokenClass.addBelongTo(User.delegate, 'user', 'user_id');
-    OAuthAccessTokenClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
-    const OAuthAccessToken = new OAuthAccessTokenClass(databases.common, {});
-    OAuthRefreshTokenClass.addBelongTo(OAuthAccessToken.delegate, 'accessToken', 'access_token_id');
-    const OAuthRefreshToken = new OAuthRefreshTokenClass(databases.common, {});
+    OAuthTokenClass.addBelongTo(User.delegate, 'user', 'user_id');
+    OAuthTokenClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
+    const OAuthAccessToken = new OAuthTokenClass(databases.common, {});
 
     const OAuthProvider = new OAuthProviderClass(databases.common, {});
     OAuthProviderAccessClass.addBelongTo(User.delegate, 'user', 'user_id');
@@ -82,16 +80,20 @@ const configModels = (databases) => {
     OAuthProviderUserClass.addBelongTo(User.delegate, 'user', 'user_id');
 
     return {
+        UserAgent: UserAgent,
+
         Role: Role,
         User: User,
+
         OAuthClient: OAuthClient,
         OAuthCode: OAuthCode,
-        OAuthAccessToken: OAuthAccessToken,
-        OAuthRefreshToken: OAuthRefreshToken,
+        OAuthToken: OAuthAccessToken,
+
         OAuthProvider: OAuthProvider,
-        UserAgent: UserAgent,
-        OAuthProviderAccess: (options) => new OAuthProviderAccessClass(databases.common, options || {}),
-        OAuthProviderUser: (options) => new OAuthProviderUserClass(databases.common, options || {})
+        OAuthProviderAccess: (options) =>
+            new OAuthProviderAccessClass(databases.common, options || {}),
+        OAuthProviderUser: (options) =>
+            new OAuthProviderUserClass(databases.common, options || {})
     };
 };
 
@@ -131,28 +133,27 @@ export default class Container extends Context {
         const config = this.config;
         const client = await models.OAuthClient.findOne({where: {id: config.client.web}});
         const providers = await configOAuthClients(config.client, models.OAuthProvider);
-
+        const oauthServerService = new OAuthServerService({
+            models: models,
+            logger: defaultLogging
+        });
+        const oauthProviderService = new OAuthProviderService({
+            accessModelClass: models.OAuthProviderAccess,
+            userModelClass: models.OAuthProviderUser,
+            localUserModel: models.User,
+            logger: defaultLogging,
+            providers: providers
+        });
+        const oauthService = Object.assign({}, oauthServerService, oauthProviderService);
+        const koaOAuthServer = new KoaOAuthServer({
+            debug: false,
+            service: oauthService,
+            logger: defaultLogging
+        });
         this.register('oauth.client.web', client)
-            .register('service.auth.client', new OAuthProviderService({
-                accessModelClass: models.OAuthProviderAccess,
-                userModelClass: models.OAuthProviderUser,
-                localUserModel: models.User,
-                logger: defaultLogging,
-                providers: providers
-            }))
-            .register('service.auth.server', new OAuthServerService({
-                models: models,
-                logger: defaultLogging
-            }))
-            .register('api.auth.client', new KoaOAuthClient({
-                service: this.module('service.auth.client'),
-                logger: defaultLogging
-            }))
-            .register('api.auth.server', new KoaOAuthServer({
-                debug: false,
-                service: this.module('service.auth.server'),
-                logger: defaultLogging
-            }))
+            .register('service.auth.client', oauthService)
+            .register('service.auth.server', oauthService)
+            .register('api.auth.server', koaOAuthServer)
             .register('web.auth', new KoaBrowserAuth(this));
 
         return this;

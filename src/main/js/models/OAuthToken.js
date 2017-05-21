@@ -19,7 +19,7 @@ export default class OAuthAccessToken extends ModelClass {
     };
 
     get name() {
-        return 'oauth_access_token';
+        return 'oauth_token';
     }
 
     get belongsToDefine() {
@@ -30,7 +30,7 @@ export default class OAuthAccessToken extends ModelClass {
         return {
             schema: 'public',
 
-            tableName: 'oauth_access_token',
+            tableName: 'oauth_token',
 
             timestamps: true,
 
@@ -46,31 +46,38 @@ export default class OAuthAccessToken extends ModelClass {
 
     get fieldsDefine() {
         return {
-            id: {
+            accessToken: {
                 type: Sequelize.STRING,
                 primaryKey: true,
                 autoIncrement: false,
                 defaultValue: Sequelize.DEFAULT,
-                field: 'id'
+                field: 'access_token'
             },
-            name: {
+            expiresAt: {
+                type: Sequelize.DATE,
+                field: 'expires_at'
+            },
+            refreshToken: {
                 type: Sequelize.STRING,
-                field: 'name',
+                primaryKey: true,
+                autoIncrement: false,
+                defaultValue: Sequelize.DEFAULT,
+                field: 'refresh_token'
+            },
+            remindAt: {
+                type: Sequelize.STRING,
+                field: 'remind_at',
                 defaultValue: ''
             },
-            scopes: {
+            scope: {
                 type: Sequelize.STRING,
-                field: 'scopes',
+                field: 'scope',
                 defaultValue: '*'
             },
             revoked: {
                 type: Sequelize.BOOLEAN,
                 field: 'revoked',
                 defaultValue: false
-            },
-            expiresAt: {
-                type: Sequelize.DATE,
-                field: 'expires_at'
             }
         };
     }

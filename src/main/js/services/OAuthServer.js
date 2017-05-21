@@ -22,7 +22,7 @@ const grantTypes = (value) => {
         grants.push('client_credentials');
     }
     if ((8 & value) === 8) {
-        grants.push('implicit');
+        grants.push('proxy');
     }
     if ((16 & value) === 16) {
         grants.push('refresh_token');
@@ -42,52 +42,38 @@ export default class OAuthServerService {
     }
 
     saveToken = (token, client, user) => {
-        const {OAuthAccessToken, OAuthRefreshToken} = this.models;
-        const accessToken = {
-            id: token.accessToken,
+        const {OAuthToken} = this.models;
+        OAuthToken.create({
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken,
+            remindAt: token.refreshTokenExpiresAt,
             expiresAt: token.accessTokenExpiresAt,
             user_id: user.id,
             client_id: client.clientId
-        };
-        OAuthAccessToken.create(accessToken)
-            .then(savedToken => {
-                this.logger.info('Saved access token [' + savedToken.id + '] for client[' + client.clientId + '], user[ ' + user.id + ' ].');
-                if (token.refreshToken) {
-                    const refreshToken = {
-                        id: token.refreshToken,
-                        expiresAt: token.refreshTokenExpiresAt,
-                        access_token_id: token.accessToken
-                    };
-                    return OAuthRefreshToken.create(refreshToken);
-                }
-                return null;
-            }).then(savedRefreshToken => {
-                if (savedRefreshToken) {
-                    this.logger.info('Saved refresh token [' + savedRefreshToken.id + '] for access token [' + token.accessToken + '].');
-                }
-            }).catch(e => this.logger.error(e));
-
+        }).then(savedToken =>
+            this.logger.info('Saved access token [' + savedToken.accessToken + '] for client[' + client.clientId + '], user[ ' + user.id + ' ].')
+        ).catch(e =>
+            this.logger.error(e)
+        );
         token.client = client;
         token.user = user;
         return token;
     };
 
     revokeToken = (token) => {
-        const {OAuthAccessToken, OAuthRefreshToken} = this.models;
-        OAuthAccessToken.findByPrimary(token.accessToken)
+        const {OAuthToken} = this.models;
+        OAuthToken.findByPrimary(token.accessToken)
             .then(accessToken => accessToken.update({revoked: true}))
-            .then(() => OAuthRefreshToken.findByPrimary(token.refreshToken))
-            .then(refreshToken => refreshToken.update({revoked: true}))
             .catch(e => this.logger.error(e));
         return token;
     };
 
     getAccessToken = async (bearerToken) => {
-        const {OAuthAccessToken} = this.models;
+        const {OAuthToken} = this.models;
         try {
-            const oauthToken = await OAuthAccessToken.findOne({where: {id: bearerToken, revoked: false}});
+            const oauthToken = await OAuthToken.findOne({where: {accessToken: bearerToken, revoked: false}});
             return {
-                accessToken: oauthToken.access_token,
+                accessToken: oauthToken.accessToken,
                 clientId: oauthToken.client_id,
                 expires: oauthToken.expiresAt,
                 userId: oauthToken.user_id
@@ -99,18 +85,17 @@ export default class OAuthServerService {
     };
 
     getRefreshToken = async (bearerToken) => {
-        const {OAuthRefreshToken} = this.models;
+        const {OAuthToken} = this.models;
         // access_token, access_token_expires_on, client_id, refresh_token, refresh_token_expires_on, user_id
         try {
-            const refreshToken = await OAuthRefreshToken.findByPrimary(bearerToken);
-            const accessToken = await refreshToken.getAccessToken();
+            const token = await OAuthToken.findOne({where: {refreshToken: bearerToken}});
             return {
-                accessToken: accessToken.id,
-                accessTokenExpiresAt: accessToken.expires_at,
-                client: await accessToken.getClient(),
-                user: await accessToken.getUser(),
+                accessToken: token.accessToken,
+                accessTokenExpiresAt: token.expiresAt,
+                client: await token.getClient(),
+                user: await token.getUser(),
                 refreshToken: bearerToken,
-                refreshTokenExpiresAt: refreshToken.expires_at,
+                refreshTokenExpiresAt: token.remindAt
             };
         } catch (e) {
             this.logger.error(e);
@@ -179,5 +164,10 @@ export default class OAuthServerService {
             this.logger.error(e);
             return false;
         }
+    };
+
+    saveAuthorizationCode = async (code, client, user) => {
+        const {OAuthCode} = this.models;
+        return await OAuthCode.create({id: code, user_id: user.id, client_id: client.id});
     };
 }

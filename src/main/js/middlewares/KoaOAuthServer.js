@@ -6,14 +6,15 @@
  */
 
 
-import _ from 'lodash';
 import log4js from 'koa-log4';
+import ProxyGrantType from './ProxyGrantType';
 
-import NodeOAuthServer, {
+import NodeOAuthServer,
+{
+    InvalidGrantError,
     Request,
     Response,
-    UnauthorizedRequestError,
-    InvalidGrantError
+    UnauthorizedRequestError
 } from 'oauth2-server';
 
 
@@ -52,7 +53,7 @@ const convertError = (error) => {
 };
 
 const transferResponse = (response, res) => {
-    res.status = response.status;
+    res.status = response.statusCode;
     for (const header in response.headers) {
         res.header[header] = response.headers[header];
     }
@@ -67,7 +68,8 @@ export default class KoaOAuthServer {
     constructor(options) {
         this.service = options.service;
         this.logger = options.logger ?
-            ( _.isString(options.logger) ? log4js.getLogger(options.logger) : options.logger )
+            ( (typeof options.logger === 'string') ?
+                log4js.getLogger(options.logger) : options.logger )
             : console;
         options.model = options.service;
         delete options.logger;
@@ -113,7 +115,11 @@ export default class KoaOAuthServer {
         const response = new Response(ctx.res);
         let result = null;
         try {
-            const token = await this.delegate.token(request, response);
+            const token = await this.delegate.token(request, response, {
+                extendedGrantTypes: {
+                    proxy: ProxyGrantType
+                }
+            });
             result = convertToken(token);
         } catch (error) {
             result = convertError(error);
@@ -124,7 +130,7 @@ export default class KoaOAuthServer {
             transferResponse(response, ctx.response);
             if (next) {
                 ctx.state.oauth = result;
-                await next();
+                await next(ctx);
             } else {
                 ctx.response.header['content-type'] = 'application/json; charset=UTF-8';
                 ctx.body = result;
