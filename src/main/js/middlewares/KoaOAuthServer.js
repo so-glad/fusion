@@ -12,21 +12,6 @@ import {OAuth2Server, OAuth2Errors, Parameter} from 'oauth2-producer';
 
 const {UnauthorizedRequestError, InvalidGrantError} = OAuth2Errors;
 
-const convertToken = (token) => {
-    if (!token) {
-        return {};
-    }
-    const user = token.user;
-    const client = token.client;
-    delete token.user;
-    delete token.client;
-    return {
-        token: token,
-        user: user,
-        client: client
-    };
-};
-
 const convertError = (error) => {
     const resultError = {body: {error: false, message: '', code: 200}, status: 200};
     if (error) {
@@ -48,7 +33,7 @@ const convertError = (error) => {
 const transferResponse = (result, res) => {
     res.status = result.status;
     for (const header in result.headers) {
-        res.header[header] = result.getHeader(header);
+        res.header[header] = result.header(header);
     }
 };
 
@@ -64,7 +49,6 @@ export default class KoaOAuthServer {
             ( (typeof options.logger === 'string') ?
                 log4js.getLogger(options.logger) : options.logger )
             : console;
-        options.model = options.service;
         delete options.logger;
         this.delegate = new OAuth2Server(options);
     }
@@ -109,7 +93,6 @@ export default class KoaOAuthServer {
         let result = null;
         try {
             result = await this.delegate.token(params);
-            result.body = convertToken(result.body);
         } catch (error) {
             result = convertError(error);
             this.logger.error('Oauth token error, cause: ' + error.message
@@ -121,7 +104,7 @@ export default class KoaOAuthServer {
                 await next(ctx);
             } else {
                 ctx.response.header['content-type'] = 'application/json; charset=UTF-8';
-                ctx.body = result.body;
+                ctx.body = result.body.valueOf();
             }
         }
     };
@@ -138,7 +121,6 @@ export default class KoaOAuthServer {
         let result = null;
         try {
             result = await this.delegate.authenticate(params);
-            result.body = convertToken(result.body);
         } catch (e) {
             result = convertError(e);
             this.logger.error('Oauth authenticate error, cause: ' + e.message

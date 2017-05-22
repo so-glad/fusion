@@ -36,7 +36,9 @@ export default class OAuthClient extends ModelClass {
 
             paranoid: false,
 
-            underscored: true
+            underscored: true,
+
+            defaultScope: {revoked: false}
         };
     }
 

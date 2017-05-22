@@ -37,7 +37,9 @@ export default class UserClass extends ModelClass {
 
             paranoid: false,
 
-            underscored: true
+            underscored: true,
+
+            defaultScope: {revoked: false}
         };
     }
 

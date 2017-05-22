@@ -22,7 +22,10 @@ import OAuthProviderClass from './models/OAuthProvider';
 import OAuthProviderAccessClass from './models/OAuthProviderAccess';
 import OAuthProviderUserClass from './models/OAuthProviderUser';
 //Services
-import OAuthServerService from './services/OAuthServer';
+import UserService from './services/User';
+import OAuthClientService from './services/OAuthClient';
+import OAuthTokenService from './services/OAuthToken';
+import OAuthCodeService from './services/OAuthCode';
 import OAuthProviderService from './services/OAuthProvider';
 //Server Middleware
 import KoaOAuthServer from './middlewares/KoaOAuthServer';
@@ -97,7 +100,7 @@ const configModels = (databases) => {
     };
 };
 
-const configOAuthClients = async (clientConfig, providerModel) => {
+const configOAuthProviders = async (clientConfig, providerModel) => {
     let providers = [];
     for (const type in clientConfig) {
         const clients = clientConfig[type];
@@ -122,21 +125,7 @@ export default class Container extends Context {
         const defaultLogging = this.config.log4js.appenders[0].category;
         const databases = configDatabase(this.config.databases);
         const models = configModels(databases);
-
-        this.register('models', models)
-            .register('input.agent', new KoaUserAgent(models, defaultLogging));
-    }
-
-    heatUp = async () => {
-        const defaultLogging = this.config.log4js.appenders[0].category;
-        const models = this.module('models');
-        const config = this.config;
-        const client = await models.OAuthClient.findOne({where: {id: config.client.web}});
-        const providers = await configOAuthClients(config.client, models.OAuthProvider);
-        const oauthServerService = new OAuthServerService({
-            models: models,
-            logger: defaultLogging
-        });
+        const providers = configOAuthProviders(config.client, models.OAuthProvider);
         const oauthProviderService = new OAuthProviderService({
             accessModelClass: models.OAuthProviderAccess,
             userModelClass: models.OAuthProviderUser,
@@ -144,15 +133,34 @@ export default class Container extends Context {
             logger: defaultLogging,
             providers: providers
         });
-        const oauthService = Object.assign({}, oauthServerService, oauthProviderService);
+        this.register('models', models)
+            .register('input.agent', new KoaUserAgent(models, defaultLogging))
+            .register('service.user', new UserService({UserModel: models.User, logger: defaultLogging}))
+            .register('service.oauth.client', new OAuthClientService({OAuthClientModel: models.OAuthClient, logger: defaultLogging}))
+            .register('service.oauth.token', new OAuthTokenService({OAuthTokenModel: models.OAuthToken, logger: defaultLogging}))
+            .register('service.oauth.code', new OAuthCodeService({OAuthCodeModel: models.OAuthCode, logger: defaultLogging}))
+            .register('service.oauth.provider', oauthProviderService);
+    }
+
+    heatUp = async () => {
+        const defaultLogging = this.config.log4js.appenders[0].category;
+        const models = this.module('models');
+        const config = this.config;
+        const client = await models.OAuthClient.findOne({where: {id: config.client.web}});
+
+        const oauthService = Object.assign({},
+            this.module('service.user'),
+            this.module('service.oauth.client'),
+            this.module('service.oauth.code'),
+            this.module('service.oauth.token'),
+            this.module('service.oauth.provider'));
+
         const koaOAuthServer = new KoaOAuthServer({
             debug: false,
             service: oauthService,
             logger: defaultLogging
         });
         this.register('oauth.client.web', client)
-            .register('service.auth.client', oauthService)
-            .register('service.auth.server', oauthService)
             .register('api.auth.server', koaOAuthServer)
             .register('web.auth', new KoaBrowserAuth(this));
 

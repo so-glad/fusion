@@ -40,7 +40,9 @@ export default class OAuthAccessToken extends ModelClass {
 
             paranoid: false,
 
-            underscored: true
+            underscored: true,
+
+            defaultScope: {revoked: false}
         };
     }
 
@@ -65,7 +67,7 @@ export default class OAuthAccessToken extends ModelClass {
                 field: 'refresh_token'
             },
             remindAt: {
-                type: Sequelize.STRING,
+                type: Sequelize.DATE,
                 field: 'remind_at',
                 defaultValue: ''
             },

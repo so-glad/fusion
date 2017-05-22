@@ -5,24 +5,45 @@
  * @since 2017/5/8.
  */
 
-import log4js from 'koa-log4';
 
-const logger = log4js.getLogger('fusion');
+import bcrypt from 'bcrypt';
+import log4js from 'log4js';
+
 
 export default class UserService {
 
     userModel = null;
 
-    constructor(models) {
-        this.userModel = models.User;
+    logger = console;
+
+    constructor(options) {
+        this.userModel = options.UserModel;
+        this.logger = (typeof options.logger === 'string') ? log4js.getLogger(options.logger) :
+            (options.logger || this.logger);
     }
 
-    findUserByUsername = async (username) => {
-        const User = this.userModel;
+    getUser = async (username, password) => {
         try {
-            return await User.findOne({where: {$or: [{username: username}, {email: username}, {mobile: username}]}});
+            const user = await this.userModel.findOne({
+                where: {$or: [{username: username}, {email: username}, {mobile: username}]}
+            });
+            if (user && bcrypt.compareSync(password, user.password)) {
+                return {
+                    id: user.id,
+                    username: user.username,
+                    alias: user.alias,
+                    avatar: user.avatar,
+                    email: user.email,
+                    mobile: user.mobile,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt
+                };
+            }
+            this.logger.warn('Get user via username [' + username + '], ' +
+                'password [' +password+ '] not failed');
+            return false;
         } catch (e) {
-            logger.error(e);
+            this.logger.error(e);
             return false;
         }
     };

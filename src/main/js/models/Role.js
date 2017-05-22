@@ -55,7 +55,9 @@ export default class RoleClass extends ModelClass {
 
             paranoid: false,
 
-            underscored: true
+            underscored: true,
+
+            defaultScope: {revoked: false}
         };
     }
 

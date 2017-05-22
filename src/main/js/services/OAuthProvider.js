@@ -14,6 +14,7 @@ import {OAuth2} from 'oauth2-consumer';
 import providerActionScopes from './provider_action_scopes';
 import providerUserKeys from './provider_user_keys';
 
+
 const providerHandler = (provider) => {
     const keys = providerUserKeys[provider.type];
     const handler = new OAuth2(provider.clientId, provider.clientSecret,
@@ -55,17 +56,26 @@ export default class OAuthProviderService {
                 new this.accessModelClass({tableName: 'oauth_provider_access_' + new Date().format('yyyyMMdd')});
         }, () => {
         }, true, 'Asia/Shanghai', null, true);
+
+
         const userModelClass = options.userModelClass;
-        for (const index in options.providers) {
-            const provider = options.providers[index];
+        const addProviders = (providers) => {
+            for (const index in providers) {
+                const provider = providers[index];
 
-            if(!this.providerUserModels[provider.type]){
-                this.providerUserModels[provider.type] =
-                    new userModelClass({tableName: 'oauth_provider_user_' + provider.type});
+                if(!this.providerUserModels[provider.type]) {
+                    this.providerUserModels[provider.type] =
+                        new userModelClass({tableName: 'oauth_provider_user_' + provider.type});
+                }
+
+                this.handlers[provider.type + '_' + provider.key] =
+                    providerHandler(provider);
             }
-
-            this.handlers[provider.type + '_' + provider.key] =
-                providerHandler(provider);
+        };
+        if(options.providers instanceof Promise) {
+            options.providers.then(providers => addProviders(providers));
+        } else {
+            addProviders(options.providers);
         }
     }
 
@@ -126,7 +136,6 @@ export default class OAuthProviderService {
             return access;
         }
     };
-
     /** NOT the oauth scope method, already the business api*/
     getUserByAccessToken = async (typeKey, access) => {
         const handler = this.handlers[typeKey];

@@ -24,7 +24,7 @@ export default class KoaBrowserAuth {
                 await ctx.regenerateSession();
             }
             if (ctx.request.body.remember) {
-                ctx.cookies.set('remember', ctx.state.oauth.token.accessToken, {
+                ctx.cookies.set('remember', ctx.state.oauth.accessToken, {
                     maxAge: 86400000,
                     httpOnly: true,
                     signed: true
@@ -34,18 +34,11 @@ export default class KoaBrowserAuth {
             ctx.session.user = ctx.state.oauth.user;
         }
         if (!next && ctx.state.oauth) {
-            ctx.body = ctx.state.oauth;
+            ctx.body = ctx.state.oauth.valueOf();
             ctx.response.header['content-type'] = 'application/json;charset=UTF-8';
         } else {
-            await next();
+            await next(ctx);
         }
-
-        // ctx.request.body.grant_type = 'password';
-        // ctx.request.body.client_id = this.defaultClient.clientId;
-        // ctx.request.body.client_secret = this.defaultClient.clientSecret;
-        // await this.apiAsServer.token(ctx, async () => {
-        //
-        // });
     };
 
     user = async (ctx, next) => {

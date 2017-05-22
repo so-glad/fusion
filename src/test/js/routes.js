@@ -30,7 +30,7 @@ export default class Router extends KoaRouter {
         this.get('/login/:provider', async (ctx) => {
             if(!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
-                const service = container.module('service.auth.client');
+                const service = container.module('service.oauth.provider');
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
                 ctx.redirect(authorizeUrl);
             } else {
@@ -43,16 +43,17 @@ export default class Router extends KoaRouter {
         this.post('/oauth/token', async (ctx) => await apiAuth.token(ctx));
         this.post('/oauth/authorize', apiAuth.authorize);
 
-        this.get('/oauth/:provider/authorize', async (ctx) => {
-            const typeKey = ctx.params.provider;
-            const service = container.module('service.auth.client');
-            const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
-            ctx.response.header['content-type'] = 'application/json;charset=utf-8';
-            ctx.body = {result: true, url: authorizeUrl, type: typeKey};
-        });
-        this.get('/oauth/:provider/callback', async (ctx) => {
-            defaultClientForGrant(ctx, container, 'proxy');
-            await apiAuth.token(ctx);
+        this.get('/oauth/:provider', async (ctx) => {
+            if(!ctx.request.query.code && !ctx.request.query.access_token) {
+                const typeKey = ctx.params.provider;
+                const service = container.module('service.oauth.provider');
+                const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
+                ctx.response.header['content-type'] = 'application/json;charset=utf-8';
+                ctx.body = {result: true, url: authorizeUrl, type: typeKey};
+            } else {
+                defaultClientForGrant(ctx, container, 'proxy');
+                await apiAuth.token(ctx);
+            }
         });
     }
 }
