@@ -5,22 +5,19 @@
  * @since 2017/5/3.
  */
 
-import _ from 'lodash';
+
 import path from 'path';
-
-import RedisStore from './stores/Redis';
-
 
 const changePathVars = (config, confPath) => {
     for (const key in config) {
-        if (_.isString(config[key])) {
+        if (typeof config[key] === 'string') {
             config[key] = config[key]
                 .replace('${path.root}', confPath.root)
                 .replace('${path.client}', confPath.client)
                 .replace('${path.server}', confPath.server)
                 .replace('${path.resources}', confPath.resources)
                 .replace('${APP_HOME}', process.env.APP_HOME);
-        } else if (_.isObject(config[key])) {
+        } else {
             config[key] = changePathVars(config[key], confPath);
         }
     }
@@ -64,20 +61,6 @@ const refactorPath = (config) => {
     return changePathVars(config, config.path);
 };
 
-const configSession = (config) => {
-    const redisBasic = config.databases.redis;
-
-    if (config.session.store.indexOf('redis') === 0) {
-        const sessionRedis = _.clone(redisBasic);
-        if (config.session.store.length >= 7) {
-            sessionRedis.db = parseInt(config.session.store.substring(6));
-        } else {
-            sessionRedis.db = 0;
-        }
-        config.session.store = new RedisStore(sessionRedis);
-    }
-};
-
 export default class Context {
 
     config = null;
@@ -85,9 +68,8 @@ export default class Context {
     modules = {};
 
     constructor(config) {
-        this.config = _.cloneDeep(config);
+        this.config = Object.assign({}, config);
         this.config = refactorPath(this.config);
-        configSession(this.config);
     }
 
     module(name, module) {

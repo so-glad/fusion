@@ -7,7 +7,7 @@
  */
 
 import chai from 'chai';
-import log4js from 'koa-log4';
+import log4js from 'log4js';
 
 import RoleClass from '../../../main/js/models/Role';
 import context from '../context';

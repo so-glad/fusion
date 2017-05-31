@@ -6,7 +6,7 @@
  */
 
 
-import log4js from 'koa-log4';
+import log4js from 'log4js';
 
 import {OAuth2Server, OAuth2Errors, Parameter} from 'oauth2-producer';
 

@@ -7,7 +7,7 @@
 
 
 import crypto from 'crypto';
-import log4js from 'koa-log4';
+import log4js from 'log4js';
 import cron from 'cron';
 
 import {OAuth2} from 'oauth2-consumer';
@@ -52,11 +52,11 @@ export default class OAuthProviderService {
 
         this.accessModelClass = options.accessModelClass;
         new cron.CronJob('0 0 0 * * *', () => {
+            //TODO, It's not goods to define schema and table name inside service here.
             this.accessModel =
-                new this.accessModelClass({tableName: 'oauth_provider_access_' + new Date().format('yyyyMMdd')});
+                new this.accessModelClass({tableName: 'oauth_access_' + new Date().format('yyyyMMdd')});
         }, () => {
         }, true, 'Asia/Shanghai', null, true);
-
 
         const userModelClass = options.userModelClass;
         const addProviders = (providers) => {
@@ -64,8 +64,9 @@ export default class OAuthProviderService {
                 const provider = providers[index];
 
                 if(!this.providerUserModels[provider.type]) {
+                    //TODO, It's not goods to define schema and table name inside service here.
                     this.providerUserModels[provider.type] =
-                        new userModelClass({tableName: 'oauth_provider_user_' + provider.type});
+                        new userModelClass({tableName: 'oauth_user_' + provider.type});
                 }
 
                 this.handlers[provider.type + '_' + provider.key] =

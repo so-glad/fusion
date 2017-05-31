@@ -11,7 +11,7 @@ import bodyParser from 'koa-bodyparser';
 import Router from 'koa-router';
 import session from 'koa-session';
 //import CSRF from 'koa-csrf';
-import log4js from 'koa-log4';
+import log4js from 'log4js';
 
 import Container from '../../../main/js/Container';
 import config from '../../resources/config';

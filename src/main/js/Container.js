@@ -6,27 +6,22 @@
  */
 
 
-import log4js from 'koa-log4';
+import log4js from 'log4js';
 import Sequelize from 'sequelize';
+
+//Storage Define
+import RedisStore from './stores/Redis';
+
 //Models classes
-import UserAgentClass from './models/UserAgent';
+import {Common} from 'factors';
 
-import RoleClass from './models/Role';
-import UserClass from './models/User';
-
-import OAuthClientClass from './models/OAuthClient';
-import OAuthCodeClass from './models/OAuthCode';
-import OAuthTokenClass from './models/OAuthToken';
-
-import OAuthProviderClass from './models/OAuthProvider';
-import OAuthProviderAccessClass from './models/OAuthProviderAccess';
-import OAuthProviderUserClass from './models/OAuthProviderUser';
 //Services
 import UserService from './services/User';
 import OAuthClientService from './services/OAuthClient';
 import OAuthTokenService from './services/OAuthToken';
 import OAuthCodeService from './services/OAuthCode';
 import OAuthProviderService from './services/OAuthProvider';
+
 //Server Middleware
 import KoaOAuthServer from './middlewares/KoaOAuthServer';
 import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
@@ -34,8 +29,7 @@ import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
 import KoaUserAgent from './middlewares/KoaUserAgent';
 import Context from './Context';
 
-
-const configDatabase = (databases) => {
+const configStorage = (databases) => {
     const result = {};
     for (const database in databases) {
         const dataConfig = databases[database];
@@ -60,51 +54,25 @@ const configDatabase = (databases) => {
     return result;
 };
 
-const configModels = (databases) => {
-    const Role = new RoleClass(databases.common, {});
-
-    UserClass.addBelongTo(Role.delegate, 'role', 'role_id');
-    const User = new UserClass(databases.common, {});
-    const UserAgent = new UserAgentClass(databases.common, {});
-    OAuthClientClass.addBelongTo(User.delegate, 'user', 'user_id');
-    const OAuthClient = new OAuthClientClass(databases.common, {});
-
-    OAuthCodeClass.addBelongTo(User.delegate, 'user', 'user_id');
-    OAuthCodeClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
-    const OAuthCode = new OAuthCodeClass(databases.common, {});
-
-    OAuthTokenClass.addBelongTo(User.delegate, 'user', 'user_id');
-    OAuthTokenClass.addBelongTo(OAuthClient.delegate, 'client', 'client_id');
-    const OAuthAccessToken = new OAuthTokenClass(databases.common, {});
-
-    const OAuthProvider = new OAuthProviderClass(databases.common, {});
-    OAuthProviderAccessClass.addBelongTo(User.delegate, 'user', 'user_id');
-    OAuthProviderAccessClass.addBelongTo(OAuthProvider.delegate, 'providerClient', 'client_id');
-    OAuthProviderUserClass.addBelongTo(User.delegate, 'user', 'user_id');
-
-    return {
-        UserAgent: UserAgent,
-
-        Role: Role,
-        User: User,
-
-        OAuthClient: OAuthClient,
-        OAuthCode: OAuthCode,
-        OAuthToken: OAuthAccessToken,
-
-        OAuthProvider: OAuthProvider,
-        OAuthProviderAccess: (options) =>
-            new OAuthProviderAccessClass(databases.common, options || {}),
-        OAuthProviderUser: (options) =>
-            new OAuthProviderUserClass(databases.common, options || {})
-    };
+const configCommonModels = (commonDefine) => {
+    const common = new Common(commonDefine, {});
+    const {User, OAuthProvider} = common.models;
+    const {OAuthAccessClass, OAuthUserClass} = common;
+    OAuthAccessClass.addBelongTo(User.delegate, 'user', 'user_id');
+    OAuthAccessClass.addBelongTo(OAuthProvider.delegate, 'provider', 'app_id');
+    OAuthUserClass.addBelongTo(User.delegate, 'user', 'user_id');
+    common.models.OAuthAccess = (options) =>
+        new OAuthAccessClass(commonDefine, Object.assign({schema: 'oauth'}, options));
+    common.models.OAuthUser = (options) =>
+        new OAuthUserClass(commonDefine, Object.assign({schema: 'oauth'}, options));
+    return common.models;
 };
 
 const configOAuthProviders = async (clientConfig, providerModel) => {
     let providers = [];
     for (const type in clientConfig) {
         const clients = clientConfig[type];
-        const pros = await providerModel.findAll({where: {type: type, clientId: Object.values(clients)}});
+        const pros = await providerModel.findAll({where: {type: type, appId: Object.values(clients)}});
         for (const key in clients) {
             for (const i in pros) {
                 if (clients[key] === pros[i].clientId) {
@@ -117,34 +85,55 @@ const configOAuthProviders = async (clientConfig, providerModel) => {
     return providers;
 };
 
+const configSessionStore = (sessionConfig) => {
+    const redisBasic = sessionConfig.redis;
+
+    if (sessionConfig.store.indexOf('redis') === 0) {
+        const sessionRedis = Object.assign({}, redisBasic);
+        if (sessionConfig.store.length >= 7) {
+            sessionRedis.db = parseInt(sessionConfig.store.substring(6));
+        } else {
+            sessionRedis.db = 0;
+        }
+        return new RedisStore(sessionRedis);
+    }
+};
+
 export default class Container extends Context {
 
     constructor(config) {
         super(config);
         log4js.configure(this.config.log4js, {cwd: this.config.log4js.cwd});
         const defaultLogging = this.config.log4js.appenders[0].category;
-        const databases = configDatabase(this.config.databases);
-        const models = configModels(databases);
-        const providers = configOAuthProviders(config.client, models.OAuthProvider);
+
+        const databases = configStorage(this.config.databases);
+        const commonModels = configCommonModels(databases.common);
+
+        this.config.session.store =
+            configSessionStore(Object.assign({redis: this.config.databases.redis}, this.config.session));
+
+        const providers = configOAuthProviders(config.client, commonModels.OAuthProvider);
         const oauthProviderService = new OAuthProviderService({
-            accessModelClass: models.OAuthProviderAccess,
-            userModelClass: models.OAuthProviderUser,
-            localUserModel: models.User,
+            accessModelClass: commonModels.OAuthAccess,
+            userModelClass: commonModels.OAuthUser,
+            localUserModel: commonModels.User,
             logger: defaultLogging,
             providers: providers
         });
-        this.register('models', models)
-            .register('input.agent', new KoaUserAgent(models, defaultLogging))
-            .register('service.user', new UserService({UserModel: models.User, logger: defaultLogging}))
-            .register('service.oauth.client', new OAuthClientService({OAuthClientModel: models.OAuthClient, logger: defaultLogging}))
-            .register('service.oauth.token', new OAuthTokenService({OAuthTokenModel: models.OAuthToken, logger: defaultLogging}))
-            .register('service.oauth.code', new OAuthCodeService({OAuthCodeModel: models.OAuthCode, logger: defaultLogging}))
+
+        this.register('storage.relation', databases)
+            .register('models.common', commonModels)
+            .register('input.agent', new KoaUserAgent(commonModels, defaultLogging))
+            .register('service.user', new UserService({UserModel: commonModels.User, logger: defaultLogging}))
+            .register('service.oauth.client', new OAuthClientService({OAuthClientModel: commonModels.OAuthClient, logger: defaultLogging}))
+            .register('service.oauth.token', new OAuthTokenService({OAuthTokenModel: commonModels.OAuthToken, logger: defaultLogging}))
+            .register('service.oauth.code', new OAuthCodeService({OAuthCodeModel: commonModels.OAuthCode, logger: defaultLogging}))
             .register('service.oauth.provider', oauthProviderService);
     }
 
     heatUp = async () => {
         const defaultLogging = this.config.log4js.appenders[0].category;
-        const models = this.module('models');
+        const models = this.module('models.common');
         const config = this.config;
         const client = await models.OAuthClient.findOne({where: {id: config.client.web}});
 
@@ -160,6 +149,7 @@ export default class Container extends Context {
             service: oauthService,
             logger: defaultLogging
         });
+
         this.register('oauth.client.web', client)
             .register('api.auth.server', koaOAuthServer)
             .register('web.auth', new KoaBrowserAuth(this));

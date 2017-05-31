@@ -5,7 +5,6 @@
  * @since 2017/5/5.
  */
 
-import _ from 'lodash';
 
 Date.prototype.format = function (pattern) {// For use 'this', arrow function is not OK.
     let result = pattern;
@@ -31,7 +30,7 @@ Date.prototype.format = function (pattern) {// For use 'this', arrow function is
 module.exports = {
     promisefy: (instance, method) => {
         let methodImpl = method;
-        if (_.isString(method)) {
+        if (typeof method === 'string') {
             methodImpl = instance[method];
         }
 

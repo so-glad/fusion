@@ -7,7 +7,7 @@
 
 
 
-import log4js from 'koa-log4';
+import log4js from 'log4js';
 
 
 export default class OAuthTokenService {

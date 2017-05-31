@@ -6,7 +6,7 @@
  * @since 2017/5/10.
  */
 
-import log4js from 'koa-log4';
+import log4js from 'log4js';
 
 export default class KoaUserAgent {
 

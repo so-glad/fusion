@@ -22,7 +22,7 @@ node_modules
 .npmignore
 npm-debug.log
 .npmrc
-
+Dockerfile
 # IDE/Editor stuff
 .idea
 .eclipse

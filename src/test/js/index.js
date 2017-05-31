@@ -7,7 +7,8 @@
 
 
 import http from 'http';
-import log4js from 'koa-log4';
+import log4js from 'log4js';
+import {koaLogger} from 'koa-log4';
 
 import App from 'koa';
 import bodyParser from 'koa-bodyparser';
@@ -42,7 +43,7 @@ export default class Application {
         //Record user agent
         this.app.use(container.module('input.agent').each);
         //Http Log
-        this.app.use(log4js.koaLogger(httpLogger, {level: 'auto'}));
+        this.app.use(koaLogger(httpLogger, {level: 'auto'}));
         this.app.use(bodyParser());
         this.app.use(json());
         // Session
