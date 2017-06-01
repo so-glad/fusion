@@ -7,10 +7,12 @@
 
 import Context from './Context';
 import Container from './Container';
+import Router from './Router';
 
 module.exports = {
     Context: Context,
-    Container: Container
+    Container: Container,
+    Router: Router
 };
 
 export default module.exports;

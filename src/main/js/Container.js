@@ -59,7 +59,7 @@ const configCommonModels = (commonDefine) => {
     const {User, OAuthProvider} = common.models;
     const {OAuthAccessClass, OAuthUserClass} = common;
     OAuthAccessClass.addBelongTo(User.delegate, 'user', 'user_id');
-    OAuthAccessClass.addBelongTo(OAuthProvider.delegate, 'provider', 'app_id');
+    OAuthAccessClass.addBelongTo(OAuthProvider.delegate, 'provider', 'app_id', 'app_id');
     OAuthUserClass.addBelongTo(User.delegate, 'user', 'user_id');
     common.models.OAuthAccess = (options) =>
         new OAuthAccessClass(commonDefine, Object.assign({schema: 'oauth'}, options));
@@ -151,7 +151,7 @@ export default class Container extends Context {
         });
 
         this.register('oauth.client.web', client)
-            .register('api.auth.server', koaOAuthServer)
+            .register('api.auth', koaOAuthServer)
             .register('web.auth', new KoaBrowserAuth(this));
 
         return this;

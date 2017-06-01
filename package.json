@@ -5,7 +5,8 @@
     "main": "lib/index.js",
     "scripts": {
         "build": "babel src/main/js -d lib",
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "testc": "babel src/test/js -d unit",
+        "test": "mocha unit --recursive",
         "module": "babel src/main/js -d lib --presets es2015,stage-0 --plugins transform-runtime",
         "app.lib": "babel src/main/js -d dist/lib --presets es2015,stage-0 --plugins transform-runtime",
         "app.app": "babel src/test/js/index.js -o dist/lib/main.js --presets es2015,stage-0 --plugins transform-runtime && babel src/test/js/routes.js -o dist/lib/routes.js --presets es2015,stage-0 --plugins transform-runtime",

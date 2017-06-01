@@ -2,11 +2,9 @@
 
 /**
  * @author palmtale
- * @since 2017/5/11.
+ * @since 2017/6/1.
  */
 
-
-import KoaRouter from 'koa-router';
 
 const defaultClientForGrant = (ctx, container, grant) => {
     ctx.request.body.grant_type = grant;
@@ -15,19 +13,39 @@ const defaultClientForGrant = (ctx, container, grant) => {
     ctx.request.body.client_secret = client.secret;
     ctx.request.query.provider = ctx.params.provider;
 };
+ 
+export default class Router {
 
-export default class Router extends KoaRouter {
-    constructor(container) {
-        super();
+    _router = null;
+
+    authenticate = null;
+
+    Role = {Admin: 1};
+
+    roleRequired = async (roleId, ctx, next) => {
+        await this.authenticate(ctx, async (ctx) => {
+            const user = ctx.session.user || ctx.state.oauth.user;
+            if(user.role_id === roleId) {
+                await next(ctx);
+            } else {
+                ctx.status = 403;
+            }
+        });
+    };
+
+    constructor(container, router) {
+        this._router = router;
+
         const webAuth = container.module('web.auth');
-        this.post('/login', async (ctx) => {
+        this.authenticate = webAuth.authenticate;
+
+        //TODO implement CRSF code for login.
+        this._router.get('/login', async (ctx) => ctx.body = {message: 'Not implemented'});
+        this._router.post('/login', async (ctx) => {
             defaultClientForGrant(ctx, container, 'password');
             await apiAuth.token(ctx, webAuth.login);
         });
-        this.get('/user', async (ctx) => await webAuth.user(ctx));
-        this.get('/client', async (ctx) => await webAuth.client(ctx));
-        this.get('/logout', webAuth.logout);
-        this.get('/login/:provider', async (ctx) => {
+        this._router.get('/login/:provider', async (ctx) => {
             if(!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
                 const service = container.module('service.oauth.provider');
@@ -38,12 +56,16 @@ export default class Router extends KoaRouter {
                 await apiAuth.token(ctx, webAuth.login);
             }
         });
+        this._router.del('/login', webAuth.logout);
+        this._router.get('/user', async (ctx) => await webAuth.user(ctx));
+        this._router.get('/client', async (ctx) => await webAuth.client(ctx));
 
-        const apiAuth = container.module('api.auth.server');
-        this.post('/oauth/token', async (ctx) => await apiAuth.token(ctx));
-        this.post('/oauth/authorize', apiAuth.authorize);
 
-        this.get('/oauth/:provider', async (ctx) => {
+        const apiAuth = container.module('api.auth');
+        this._router.post('/oauth/authorize', apiAuth.authorize);
+        this._router.post('/oauth/token', async (ctx) => await apiAuth.token(ctx));
+        this._router.del('/oauth/token', async (ctx) => await apiAuth.revoke(ctx));
+        this._router.get('/oauth/:provider', async (ctx) => {
             if(!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
                 const service = container.module('service.oauth.provider');
@@ -55,5 +77,8 @@ export default class Router extends KoaRouter {
                 await apiAuth.token(ctx);
             }
         });
+
+        this.routes = () => this._router.routes.apply(this._router);
+        this.allowedMethods = () => this._router.allowedMethods.apply(this._router);
     }
 }

@@ -15,10 +15,11 @@ import bodyParser from 'koa-bodyparser';
 import json from 'koa-json';
 import session from 'koa-session';
 import send from 'koa-send';
+import KoaRouter from 'koa-router';
 
 import {Container} from '../../main/js/index';
 import config from '../resources/config';
-import Router from './routes';
+import Router from '../../main/js/Router';
 
 
 const container = new Container(config);
@@ -63,7 +64,7 @@ export default class Application {
     }
 
     withRouter = (router) => {
-        if(this.app) {
+        if (this.app) {
             this.app.use(router.routes())
                 .use(router.allowedMethods());
         }
@@ -71,7 +72,7 @@ export default class Application {
     };
 
     startUp = () => {
-        const port = parseInt(container.config.port ||process.env.APP_PORT || 5000),
+        const port = parseInt(container.config.port || process.env.APP_PORT || 5000),
             server = http.createServer(this.app.callback());
 
         server.listen(port);
@@ -101,6 +102,9 @@ export default class Application {
     }
 }
 
-container.heatUp().then(container => {
-    new Application().withRouter(new Router(container)).startUp();
-});
+container.heatUp()
+    .then(container => {
+        new Application()
+            .withRouter(new Router(container, new KoaRouter()))
+            .startUp();
+    });

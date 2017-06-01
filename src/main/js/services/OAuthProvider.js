@@ -17,7 +17,7 @@ import providerUserKeys from './provider_user_keys';
 
 const providerHandler = (provider) => {
     const keys = providerUserKeys[provider.type];
-    const handler = new OAuth2(provider.clientId, provider.clientSecret,
+    const handler = new OAuth2(provider.appId, provider.appSecret,
             '',
             provider.authorizeUrl,
             provider.tokenUrl);
@@ -96,7 +96,7 @@ export default class OAuthProviderService {
         const state = crypto.createHash('sha256')
             .update((user ? user.id : '') + action + scope + now.getTime(), 'utf8').digest('hex');
         this.accessModel.create({
-            type: typeKey, client_id: handler._clientId, user_id: (user ? user.id : null),
+            type: typeKey, app_id: handler._clientId, user_id: (user ? user.id : null),
             action: action, scope: scope, state: state, timestamp: now
         });
         params.state = state;
@@ -106,7 +106,7 @@ export default class OAuthProviderService {
 
     exchangeAccessTokenByCode = async (typeKey, code, state, user) => {
         const handler = this.handlers[typeKey];
-        const where = {type: typeKey, state: state, client_id: handler._clientId};
+        const where = {type: typeKey, state: state, app_id: handler._clientId};
         if (user) {
             where.user_id = user.id;
         }

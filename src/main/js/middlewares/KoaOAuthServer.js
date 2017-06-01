@@ -8,7 +8,7 @@
 
 import log4js from 'log4js';
 
-import {OAuth2Server, OAuth2Errors, Parameter} from 'oauth2-producer';
+import {OAuth2Errors, OAuth2Server, Parameter} from 'oauth2-producer';
 
 const {UnauthorizedRequestError, InvalidGrantError} = OAuth2Errors;
 
@@ -137,7 +137,24 @@ export default class KoaOAuthServer {
         }
     };
 
-    revoke = (token) => {
-        this.service.revokeToken(token);
+    revoke = async (ctx, next) => {
+        const params = new Parameter(ctx.request);
+        let result = null;
+        try {
+            result = await this.service.revokeToken(params.token);
+        } catch (e) {
+            result = convertError(e);
+            this.logger.error('Oauth authenticate error, cause: ' + e.message
+                + ', error code: ' + e.code);
+        } finally {
+            transferResponse(result, ctx.response);
+            if (next) {
+                ctx.state.oauth = result.body;
+                await next(ctx);
+            } else {
+                ctx.res.header('content-type', 'application/json; charset=UTF-8');
+                ctx.res.body = result.body;
+            }
+        }
     };
 }
