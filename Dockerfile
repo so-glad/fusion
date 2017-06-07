@@ -17,8 +17,9 @@ RUN set -ex \
     && sed -i '4s/src\/test\/js/lib/' $APP_HOME/etc/config.json \
     && sed -i '5s/src\/test\/resources/etc/' $APP_HOME/etc/config.json \
     && sed -i '6s/src\/test\/web/web/' $APP_HOME/etc/config.json \
-    && sed -i '52s/..\/..\/main\/js/./' $APP_HOME/lib/main.js \
-    && sed -i '54s/resources/etc/' $APP_HOME/lib/main.js \
+    && sed -i '58s/..\/..\/main\/js/./' $APP_HOME/lib/main.js \
+    && sed -i '64s/..\/..\/main\/js/./' $APP_HOME/lib/main.js \
+    && sed -i '60s/resources/etc/' $APP_HOME/lib/main.js \
     && npm config set strict-ssl false \
     && npm config set registry https://pub.glad.so/repository/npm \
     && cp $APP_HOME/etc/config.json /tmp/ \
