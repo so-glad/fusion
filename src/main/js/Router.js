@@ -23,14 +23,13 @@ export default class Router {
     Role = {Admin: 1};
 
     roleRequired = async (roleId, ctx, next) => {
-        await this.authenticate(ctx, async (ctx) => {
-            const user = ctx.session.user || ctx.state.oauth.user;
-            if(user.role_id === roleId) {
-                await next(ctx);
-            } else {
-                ctx.status = 403;
-            }
-        });
+        await this.authenticate(ctx);
+        const user = ctx.session.user || ctx.state.oauth.user;
+        if(user.role_id === roleId) {
+            await next(ctx);
+        } else {
+            ctx.status = 403;
+        }
     };
 
     constructor(container, router) {
@@ -39,7 +38,7 @@ export default class Router {
         const webAuth = container.module('web.auth');
         this.authenticate = webAuth.authenticate;
 
-        //TODO implement CRSF code for login.
+        //TODO implement CSRF code for login.
         this._router.get('/login', async (ctx) => ctx.body = {message: 'Not implemented'});
         this._router.post('/login', async (ctx) => {
             defaultClientForGrant(ctx, container, 'password');
@@ -62,9 +61,18 @@ export default class Router {
 
 
         const apiAuth = container.module('api.auth');
-        this._router.post('/oauth/authorize', apiAuth.authorize);
-        this._router.post('/oauth/token', async (ctx) => await apiAuth.token(ctx));
-        this._router.del('/oauth/token', async (ctx) => await apiAuth.revoke(ctx));
+        this._router.post('/oauth/authorize', async ctx => {
+            await apiAuth.authorize(ctx);
+            ctx.body = ctx.state.oauth;
+        });
+        this._router.post('/oauth/token', async (ctx) => {
+            await apiAuth.token(ctx);
+            ctx.body = ctx.state.oauth.valueOf();
+        });
+        this._router.del('/oauth/token', async (ctx) => {
+            await apiAuth.revoke(ctx);
+            ctx.body = ctx.state.oauth;
+        });
         this._router.get('/oauth/:provider', async (ctx) => {
             if(!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
@@ -75,6 +83,7 @@ export default class Router {
             } else {
                 defaultClientForGrant(ctx, container, 'proxy');
                 await apiAuth.token(ctx);
+                ctx.body = ctx.state.oauth.valueOf();
             }
         });
 

@@ -71,13 +71,12 @@ export default class KoaOAuthServer {
                 + ', error code: ' + error.code);
         } finally {
             transferResponse(result, ctx.response);
-            if (next) {
-                ctx.state.oauth = result.body;
-                await next(ctx);
-            } else {
-                ctx.response.header['content-type'] = 'application/json; charset=UTF-8';
-                ctx.body = result.body;
-            }
+            ctx.state.oauth = result.body;
+        }
+        if (next) {
+            await next(ctx);
+        } else {
+            return ctx;
         }
     };
 
@@ -99,13 +98,12 @@ export default class KoaOAuthServer {
                 + ', error code: ' + error.statusCode);
         } finally {
             transferResponse(result, ctx.response);
-            if (next) {
-                ctx.state.oauth = result.body;
-                await next(ctx);
-            } else {
-                ctx.response.header['content-type'] = 'application/json; charset=UTF-8';
-                ctx.body = result.body.valueOf();
-            }
+            ctx.state.oauth = result.body;
+        }
+        if (next) {
+            await next(ctx);
+        } else {
+            return ctx;
         }
     };
 
@@ -127,13 +125,12 @@ export default class KoaOAuthServer {
                 + ', error code: ' + e.code);
         } finally {
             transferResponse(result, ctx.response);
-            if (next) {
-                ctx.state.oauth = result.body;
-                await next(ctx);
-            } else {
-                ctx.res.header('content-type', 'application/json; charset=UTF-8');
-                ctx.res.body = result.body;
-            }
+            ctx.state.oauth = result.body;
+        }
+        if (next) {
+            await next(ctx);
+        } else {
+            return ctx;
         }
     };
 
@@ -148,13 +145,12 @@ export default class KoaOAuthServer {
                 + ', error code: ' + e.code);
         } finally {
             transferResponse(result, ctx.response);
-            if (next) {
-                ctx.state.oauth = result.body;
-                await next(ctx);
-            } else {
-                ctx.res.header('content-type', 'application/json; charset=UTF-8');
-                ctx.res.body = result.body;
-            }
+            ctx.state.oauth = result.body;
+        }
+        if (next) {
+            await next(ctx);
+        } else {
+            return ctx;
         }
     };
 }

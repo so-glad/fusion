@@ -71,28 +71,29 @@ export default class KoaBrowserAuth {
     };
 
     authenticate = async (ctx, next) => {
-        if (ctx.session.user && ctx.session.client) {
-            await next(ctx);
-        } else {
+        if (!ctx.session.user) {
             if (!ctx.request.header['Authorization'] && ctx.cookies.get('remember')) {
                 ctx.request.header['Authorization'] = ('Bearer ' + ctx.cookies.get('remember'));
             }
             if (ctx.request.header['Authorization']) {
-                await this.apiAsServer.authenticate(ctx, async () => {
-                    if (ctx.state.oauth && ctx.state.oauth.user) {
-                        if (ctx.regenerateSession) {
-                            await ctx.regenerateSession();
-                        }
-                        ctx.session.client = ctx.state.oauth.client;
-                        ctx.session.user = ctx.state.oauth.user;
-                        await next(ctx);
-                    } else {
-                        ctx.status = 403;
+                await this.apiAsServer.authenticate(ctx);
+                if (ctx.state.oauth && ctx.state.oauth.user) {
+                    if (ctx.regenerateSession) {
+                        await ctx.regenerateSession();
                     }
-                });
+                    ctx.session.client = ctx.state.oauth.client;
+                    ctx.session.user = ctx.state.oauth.user;
+                } else {
+                    ctx.status = 403;
+                }
             } else {
                 ctx.status = 403;
             }
+        }
+        if(next) {
+            await next(ctx);
+        } else {
+            return ctx;
         }
     };
 

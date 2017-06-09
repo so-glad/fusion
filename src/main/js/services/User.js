@@ -25,7 +25,8 @@ export default class UserService {
     getUser = async (username, password) => {
         try {
             const user = await this.userModel.findOne({
-                where: {$or: [{username: username}, {email: username}, {mobile: username}]}
+                where: {$or: [{username: username}, {email: username}, {mobile: username}]},
+                include: [{all: true}]
             });
             if (user && bcrypt.compareSync(password, user.password)) {
                 return {
