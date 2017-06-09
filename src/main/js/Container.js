@@ -133,16 +133,16 @@ export default class Container extends Context {
 
     heatUp = async () => {
         const defaultLogging = this.config.log4js.appenders[0].category;
-        const models = this.module('models.common');
+        const models = this.models.common;
         const config = this.config;
         const client = await models.OAuthClient.findOne({where: {id: config.client.web}});
 
         const oauthService = Object.assign({},
-            this.module('service.user'),
-            this.module('service.oauth.client'),
-            this.module('service.oauth.code'),
-            this.module('service.oauth.token'),
-            this.module('service.oauth.provider'));
+            this.service.user,
+            this.service.oauth.client,
+            this.service.oauth.code,
+            this.service.oauth.token,
+            this.service.oauth.provider);
 
         const koaOAuthServer = new KoaOAuthServer({
             debug: false,

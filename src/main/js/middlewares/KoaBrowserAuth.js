@@ -12,9 +12,9 @@ export default class KoaBrowserAuth {
     defaultClient = null;
 
     constructor(container) {
-        this.apiAsServer = container.module('api.auth.server');
-        this.apiAsClient = container.module('api.auth.client');
-        this.defaultClient = container.module('oauth.client.local');
+        this.apiAsServer = container.api.auth.server;
+        this.apiAsClient = container.api.auth.client;
+        this.defaultClient = container.oauth.client.local;
     }
     //OAuth Server actions group
     login = async (ctx, next) => {

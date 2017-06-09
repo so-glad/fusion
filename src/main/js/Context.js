@@ -65,28 +65,44 @@ export default class Context {
 
     config = null;
 
-    modules = {};
-
     constructor(config) {
         this.config = Object.assign({}, config);
         this.config = refactorPath(this.config);
     }
 
-    module(name, module) {
-        if (module) {
-            this.modules[name] = module;
+    get = (name) => {
+        if(!name) {
             return this;
-        } else {
-            return this.modules[name];
         }
-    }
+        const segments = name.split('.');
+        let currentNode = this;
+        for(const i in segments){
+            currentNode = currentNode[segments[i]];
+        }
+        return currentNode;
+    };
 
-    register(name, module) {
-        this.modules[name] = module;
+    set = (name, object) => {
+        if(!name || typeof name !== 'string') {
+            return object;
+        }
+        const segments = name.split('.');
+        let currentNode = this;
+        let count;
+        for(const i in segments) {
+            count = i;
+            if(i > 0) {
+                currentNode = currentNode[segments[i-1]];
+            }
+            if(!currentNode[segments[i]]) {
+                currentNode[segments[i]] = {};
+            }
+        }
+        return currentNode[segments[count]] = object;
+    };
+
+    register = (name, module) => {
+        this.set(name, module);
         return this;
-    }
-
-    getModule(name) {
-        return this.modules[name];
-    }
-};
+    };
+}

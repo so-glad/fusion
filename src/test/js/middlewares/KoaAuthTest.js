@@ -23,7 +23,7 @@ const app = new Koa();
 const router = new Router();
 app.keys = ['fusion'];
 app.use(bodyParser());
-app.use(container.module('input.agent').each);
+app.use(container.input.agent.each);
 app.use(session(container.config.session, app));
 
 router.get('/session/test', async (ctx) => {

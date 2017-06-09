@@ -8,7 +8,7 @@
 
 const defaultClientForGrant = (ctx, container, grant) => {
     ctx.request.body.grant_type = grant;
-    const client = container.module('oauth.client.web');
+    const client = container.oauth.client.web;
     ctx.request.body.client_id = client.id;
     ctx.request.body.client_secret = client.secret;
     ctx.request.query.provider = ctx.params.provider;
@@ -35,7 +35,7 @@ export default class Router {
     constructor(container, router) {
         this._router = router;
 
-        const webAuth = container.module('web.auth');
+        const webAuth = container.web.auth;
         this.authenticate = webAuth.authenticate;
 
         //TODO implement CSRF code for login.
@@ -47,7 +47,7 @@ export default class Router {
         this._router.get('/login/:provider', async (ctx) => {
             if(!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
-                const service = container.module('service.oauth.provider');
+                const service = container.service.oauth.provider;
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
                 ctx.redirect(authorizeUrl);
             } else {
@@ -59,8 +59,7 @@ export default class Router {
         this._router.get('/user', async (ctx) => await webAuth.user(ctx));
         this._router.get('/client', async (ctx) => await webAuth.client(ctx));
 
-
-        const apiAuth = container.module('api.auth');
+        const apiAuth = container.api.auth;
         this._router.post('/oauth/authorize', async ctx => {
             await apiAuth.authorize(ctx);
             ctx.body = ctx.state.oauth;
@@ -76,7 +75,7 @@ export default class Router {
         this._router.get('/oauth/:provider', async (ctx) => {
             if(!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
-                const service = container.module('service.oauth.provider');
+                const service = container.service.oauth.provider;
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
                 ctx.response.header['content-type'] = 'application/json;charset=utf-8';
                 ctx.body = {result: true, url: authorizeUrl, type: typeKey};

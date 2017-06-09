@@ -6,20 +6,20 @@
  */
 
 
-import http from 'http';
-import log4js from 'log4js';
-import {koaLogger} from 'koa-log4';
+import http from "http";
+import log4js from "log4js";
+import {koaLogger} from "koa-log4";
 
-import App from 'koa';
-import bodyParser from 'koa-bodyparser';
-import json from 'koa-json';
-import session from 'koa-session';
-import send from 'koa-send';
-import KoaRouter from 'koa-router';
+import App from "koa";
+import bodyParser from "koa-bodyparser";
+import json from "koa-json";
+import session from "koa-session";
+import send from "koa-send";
+import KoaRouter from "koa-router";
 
-import {Container} from '../../main/js/index';
-import config from '../resources/config';
-import Router from '../../main/js/Router';
+import {Container} from "../../main/js/index";
+import config from "../resources/config";
+import Router from "../../main/js/Router";
 
 
 const container = new Container(config);
@@ -42,7 +42,7 @@ export default class Application {
             httpLogger.info(`Perform Log: ${ctx.method} ${ctx.url} - ${duration}ms`);
         });
         //Record user agent
-        this.app.use(container.module('input.agent').each);
+        this.app.use(container.input.agent.each);
         //Http Log
         this.app.use(koaLogger(httpLogger, {level: 'auto'}));
         this.app.use(bodyParser());
