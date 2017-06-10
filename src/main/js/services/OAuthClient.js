@@ -42,14 +42,12 @@ export default class OAuthClientService {
 
     getClient = async (clientId, clientSecret) => {
         try {
-            console.info(this.clientModel);
             const oauthClient = await this.clientModel.findOne({
                 where: {
                     id: clientId,
                     secret: clientSecret
                 }
             });
-            console.info(oauthClient);
             if (oauthClient) {
                 return {
                     id: oauthClient.id,

@@ -6,7 +6,7 @@
  */
 
 import {makeExecutableSchema} from 'graphql-tools';
-import graphQLServer from 'graphql-server-koa';
+import {graphqlKoa as graphQLServer} from 'graphql-server-koa';
 import {graphql} from 'factors';
 
 import GraphQLResolver from './graphql';
@@ -25,10 +25,14 @@ export default class Router {
 
     authenticate = null;
 
+    get graphQLTypes() {
+        return graphql.commonDef;
+    }
+
     roleRequired = async (roleId, ctx, next) => {
         await this.authenticate(ctx);
         const user = ctx.session.user || ctx.state.oauth.user;
-        if(user.role_id === roleId) {
+        if (user.role_id === roleId) {
             await next(ctx);
         } else {
             ctx.status = 403;
@@ -42,14 +46,14 @@ export default class Router {
         this.del = (...args) => this.router.del.apply(this.router, args);
         this.routes = () => this.router.routes.apply(this.router);
         this.allowedMethods = () => this.router.allowedMethods.apply(this.router);
-        this.authenticate = container.web.auth.authenticate;
+        this.authenticate = container.api.auth.authenticate;
 
         const routerConf = container.config.router;
-        if(!routerConf) {
+        if (!routerConf) {
             this.rootWeb(container.service, container.web)
                 .withApi(container.service, container.api);
         } else {
-            switch(routerConf.root) {
+            switch (routerConf.root) {
                 case 'api':
                     this.rootApi(container.service, container.api);
                     break;
@@ -60,9 +64,9 @@ export default class Router {
                 case 'web':
                     this.rootWeb(container.service, container.web);
             }
-            if(routerConf.with){
-                for(const i in routerConf.with){
-                    switch (routerConf.with[i]){
+            if (routerConf.with) {
+                for (const i in routerConf.with) {
+                    switch (routerConf.with[i]) {
                         case 'api':
                             this.withApi(container.service, container.api);
                             break;
@@ -82,7 +86,7 @@ export default class Router {
             await web.auth.login(ctx);
         });
         this.get('/login/:provider', async (ctx) => {
-            if(!ctx.request.query.code && !ctx.request.query.access_token) {
+            if (!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
                 const service = services.oauth.provider;
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
@@ -112,7 +116,7 @@ export default class Router {
             ctx.body = ctx.state.oauth;
         });
         this.get('/:provider', async (ctx) => {
-            if(!ctx.request.query.code && !ctx.request.query.access_token) {
+            if (!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
                 const service = services.oauth.provider;
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
@@ -124,6 +128,7 @@ export default class Router {
                 ctx.body = ctx.state.oauth.valueOf();
             }
         });
+        return this;
     };
 
     withApi = (services, api) => {
@@ -141,7 +146,7 @@ export default class Router {
             ctx.body = ctx.state.oauth;
         });
         this.get('/oauth/:provider', async (ctx) => {
-            if(!ctx.request.query.code && !ctx.request.query.access_token) {
+            if (!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
                 const service = services.oauth.provider;
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
@@ -153,17 +158,18 @@ export default class Router {
                 ctx.body = ctx.state.oauth.valueOf();
             }
         });
+        return this;
     };
 
     graphQLMiddleware = (services, resolvers) => {
-        if(!services) {
+        if (!services) {
             throw new Error('No services for graphql resolver');
         }
         const graphQLResolver = new GraphQLResolver(services);
-        if(resolvers) {
+        if (resolvers) {
             graphQLResolver.combine(resolvers);
         }
-        const graphQLSchema = makeExecutableSchema({typeDefs: graphql, resolvers: graphQLResolver.get()});
+        const graphQLSchema = makeExecutableSchema({typeDefs: this.graphQLTypes, resolvers: graphQLResolver.get()});
         return graphQLServer(async ctx => {
             await this.authenticate(ctx);
             ctx.state.oauth = ctx.state.oauth || {};
@@ -182,6 +188,7 @@ export default class Router {
         const middleware = this.graphQLMiddleware(services, resolvers);
         this.get('/graphql', middleware);
         this.post('/graphql', middleware);
+        return this;
     };
 
 }

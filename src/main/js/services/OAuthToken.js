@@ -45,12 +45,15 @@ export default class OAuthTokenService {
 
     getAccessToken = async (bearerToken) => {
         try {
-            const oauthToken = await this.tokenModel.findOne({where: {accessToken: bearerToken}});
+            const oauthToken = await this.tokenModel.findOne({
+                where: {accessToken: bearerToken},
+                include: [{all: true}]});
             return {
                 accessToken: oauthToken.accessToken,
-                clientId: oauthToken.client_id,
-                expires: oauthToken.expiresAt,
-                userId: oauthToken.user_id
+                accessTokenExpiresAt: oauthToken.expiresAt,
+                client: oauthToken.client,
+                user: oauthToken.user,
+                scope: oauthToken.scope
             };
         } catch (e) {
             this.logger.error(e);
@@ -61,18 +64,29 @@ export default class OAuthTokenService {
     getRefreshToken = async (bearerToken) => {
         // access_token, access_token_expires_on, client_id, refresh_token, refresh_token_expires_on, user_id
         try {
-            const token = await this.tokenModel.findOne({where: {refreshToken: bearerToken}});
+            const token = await this.tokenModel.findOne({
+                where: {refreshToken: bearerToken},
+                include: [{all: true}]});
             return {
                 accessToken: token.accessToken,
                 accessTokenExpiresAt: token.expiresAt,
-                client: await token.getClient(),
-                user: await token.getUser(),
-                refreshToken: bearerToken,
-                refreshTokenExpiresAt: token.remindAt
+                client: token.client,
+                user: token.user,
+                refreshToken: token.refreshToken,
+                refreshTokenExpiresAt: token.remindAt,
+                scope: token.scope
             };
         } catch (e) {
             this.logger.error(e);
             return false;
         }
     };
+
+    verifyScope = async (token, scope) => {
+        //TODO scope include logic
+        if(token.scope === scope) {
+            return true;
+        }
+        return true;
+    }
 }

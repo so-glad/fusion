@@ -48,4 +48,30 @@ export default class UserService {
             return false;
         }
     };
+
+    getUserByUnique = async (key) => {
+        try {
+            const user = await this.userModel.findOne({
+                where: {$or: [{username: key}, {email: key}, {mobile: key}, {id: key}]},
+                include: [{all: true}]
+            });
+            if (user) {
+                return {
+                    id: user.id,
+                    username: user.username,
+                    alias: user.alias,
+                    avatar: user.avatar,
+                    email: user.email,
+                    mobile: user.mobile,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt
+                };
+            }
+            this.logger.warn('Get user via key [' + key + '], failed.');
+            return false;
+        } catch (e) {
+            this.logger.error(e);
+            return false;
+        }
+    }
 }

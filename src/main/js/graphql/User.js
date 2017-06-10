@@ -17,13 +17,12 @@ export default class UserResolver {
     get viewer() {
         return {
             User: async (_, {id, username, email, mobile}, context) => {
-                const {userService} = this.services;
-                const user = await userService.findByUnique(id||username||email||mobile);
-                if(context.user.id === user.id || context.user.role_id === 1) {
-                    return user;
-                } else {
+                const userService = this.services.user;
+                const user = await userService.getUserByUnique(id||username||email||mobile);
+                if(!context.user || (context.user.id !== user.id && context.user.role_id !== 1)) {
                     return 403;
                 }
+                return user;
             }
         };
     }
