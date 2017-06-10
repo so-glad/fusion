@@ -6,20 +6,20 @@
  */
 
 
-import http from "http";
-import log4js from "log4js";
-import {koaLogger} from "koa-log4";
+import http from 'http';
+import log4js from 'log4js';
+import {koaLogger} from 'koa-log4';
 
-import App from "koa";
-import bodyParser from "koa-bodyparser";
-import json from "koa-json";
-import session from "koa-session";
-import send from "koa-send";
-import KoaRouter from "koa-router";
+import App from 'koa';
+import bodyParser from 'koa-bodyparser';
+import json from 'koa-json';
+import session from 'koa-session';
+import send from 'koa-send';
+import KoaRouter from 'koa-router';
 
-import {Container} from "../../main/js/index";
-import config from "../resources/config";
-import Router from "../../main/js/Router";
+import {Container} from '../../main/js/index';
+import config from '../resources/config';
+import Router from '../../main/js/Router';
 
 
 const container = new Container(config);
@@ -100,11 +100,13 @@ export default class Application {
             logger.info('Listening on port: %d', port);
         });
     }
+
 }
 
-container.heatUp()
-    .then(container => {
+container
+    .heatUp()
+    .then(container =>
         new Application()
             .withRouter(new Router(container, new KoaRouter()))
-            .startUp();
-    });
+            .startUp()
+    );

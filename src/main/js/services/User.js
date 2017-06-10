@@ -41,7 +41,7 @@ export default class UserService {
                 };
             }
             this.logger.warn('Get user via username [' + username + '], ' +
-                'password [' +password+ '] not failed');
+                'password [' +password+ '] failed');
             return false;
         } catch (e) {
             this.logger.error(e);

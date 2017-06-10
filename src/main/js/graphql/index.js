@@ -35,11 +35,20 @@ export default class {
     }
 
     get = () => ({
+        Query: {
+            viewer: () => this.viewer
+        },
         Viewer: this.viewer,
         Mutation: this.mutation
     });
 
     combine = (resolver) => {
-        this.resolvers.push(resolver);
+        if(resolver.constructor.name === 'Array') {
+            for(const i in resolver){
+                this.resolvers.push(resolver[i]);
+            }
+        } else {
+            this.resolvers.push(resolver);
+        }
     };
 }

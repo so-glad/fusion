@@ -13,7 +13,7 @@ import Sequelize from 'sequelize';
 import RedisStore from './stores/Redis';
 
 //Models classes
-import {Common} from 'factors';
+import {sequelize} from 'factors';
 
 //Services
 import UserService from './services/User';
@@ -25,7 +25,7 @@ import OAuthProviderService from './services/OAuthProvider';
 //Server Middleware
 import KoaOAuthServer from './middlewares/KoaOAuthServer';
 import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
-import GraphQLResolver from './graphql';
+
 //Extra
 import KoaUserAgent from './middlewares/KoaUserAgent';
 import Context from './Context';
@@ -56,9 +56,9 @@ const configStorage = (databases) => {
 };
 
 const configCommonModels = (commonDefine) => {
-    const common = new Common(commonDefine, {});
+    const {OAuthAccessClass, OAuthUserClass} = sequelize.Common;
+    const common = new sequelize.Common(commonDefine, {});
     const {User, OAuthProvider} = common.models;
-    const {OAuthAccessClass, OAuthUserClass} = common;
     OAuthAccessClass.addBelongTo(User.delegate, 'user', 'user_id');
     OAuthAccessClass.addBelongTo(OAuthProvider.delegate, 'provider', 'app_id', 'app_id');
     OAuthUserClass.addBelongTo(User.delegate, 'user', 'user_id');
@@ -129,8 +129,7 @@ export default class Container extends Context {
             .register('service.oauth.client', new OAuthClientService({OAuthClientModel: commonModels.OAuthClient, logger: defaultLogging}))
             .register('service.oauth.token', new OAuthTokenService({OAuthTokenModel: commonModels.OAuthToken, logger: defaultLogging}))
             .register('service.oauth.code', new OAuthCodeService({OAuthCodeModel: commonModels.OAuthCode, logger: defaultLogging}))
-            .register('service.oauth.provider', oauthProviderService)
-            .register('graphql.resolver.constructor', GraphQLResolver);
+            .register('service.oauth.provider', oauthProviderService);
     }
 
     heatUp = async () => {
@@ -152,7 +151,8 @@ export default class Container extends Context {
             logger: defaultLogging
         });
 
-        this.register('oauth.client.web', client)
+        this.register('web.oauth.client', client)
+            .register('api.oauth.client', client)
             .register('api.auth', koaOAuthServer)
             .register('web.auth', new KoaBrowserAuth(this));
 

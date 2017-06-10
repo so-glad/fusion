@@ -5,22 +5,25 @@
  * @since 2017/6/1.
  */
 
+import {makeExecutableSchema} from 'graphql-tools';
+import graphQLServer from 'graphql-server-koa';
+import {graphql} from 'factors';
 
-const defaultClientForGrant = (ctx, container, grant) => {
+import GraphQLResolver from './graphql';
+// const Role = {Admin: 1};
+
+const defaultClientForGrant = (ctx, client, grant) => {
     ctx.request.body.grant_type = grant;
-    const client = container.oauth.client.web;
     ctx.request.body.client_id = client.id;
     ctx.request.body.client_secret = client.secret;
     ctx.request.query.provider = ctx.params.provider;
 };
- 
+
 export default class Router {
 
-    _router = null;
+    router = null;
 
     authenticate = null;
-
-    Role = {Admin: 1};
 
     roleRequired = async (roleId, ctx, next) => {
         await this.authenticate(ctx);
@@ -33,60 +36,152 @@ export default class Router {
     };
 
     constructor(container, router) {
-        this._router = router;
+        this.router = router;
+        this.get = (...args) => this.router.get.apply(this.router, args);
+        this.post = (...args) => this.router.post.apply(this.router, args);
+        this.del = (...args) => this.router.del.apply(this.router, args);
+        this.routes = () => this.router.routes.apply(this.router);
+        this.allowedMethods = () => this.router.allowedMethods.apply(this.router);
+        this.authenticate = container.web.auth.authenticate;
 
-        const webAuth = container.web.auth;
-        this.authenticate = webAuth.authenticate;
+        const routerConf = container.config.router;
+        if(!routerConf) {
+            this.rootWeb(container.service, container.web)
+                .withApi(container.service, container.api);
+        } else {
+            switch(routerConf.root) {
+                case 'api':
+                    this.rootApi(container.service, container.api);
+                    break;
+                case 'graphql':
+                    this.rootGraphQL(container.service, container.graphql.resolvers);
+                    break;
+                default:
+                case 'web':
+                    this.rootWeb(container.service, container.web);
+            }
+            if(routerConf.with){
+                for(const i in routerConf.with){
+                    switch (routerConf.with[i]){
+                        case 'api':
+                            this.withApi(container.service, container.api);
+                            break;
+                        case 'graphql':
+                            this.withGraphQL(container.service, container.graphql.resolvers);
+                    }
+                }
+            }
+        }
+    }
 
+    rootWeb = (services, web) => {
         //TODO implement CSRF code for login.
-        this._router.get('/login', async (ctx) => ctx.body = {message: 'Not implemented'});
-        this._router.post('/login', async (ctx) => {
-            defaultClientForGrant(ctx, container, 'password');
-            await apiAuth.token(ctx, webAuth.login);
+        this.get('/login', async (ctx) => ctx.body = {message: 'Not implemented'});
+        this.post('/login', async (ctx) => {
+            defaultClientForGrant(ctx, web.oauth.client, 'password');
+            await web.auth.login(ctx);
         });
-        this._router.get('/login/:provider', async (ctx) => {
+        this.get('/login/:provider', async (ctx) => {
             if(!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
-                const service = container.service.oauth.provider;
+                const service = services.oauth.provider;
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
                 ctx.redirect(authorizeUrl);
             } else {
-                defaultClientForGrant(ctx, container, 'proxy');
-                await apiAuth.token(ctx, webAuth.login);
+                defaultClientForGrant(ctx, web.oauth.client, 'proxy');
+                await web.auth.login(ctx);
             }
         });
-        this._router.del('/login', webAuth.logout);
-        this._router.get('/user', async (ctx) => await webAuth.user(ctx));
-        this._router.get('/client', async (ctx) => await webAuth.client(ctx));
+        this.del('/login', web.auth.logout);
+        this.get('/user', async (ctx) => await web.auth.user(ctx));
+        this.get('/client', async (ctx) => await web.auth.client(ctx));
+        return this;
+    };
 
-        const apiAuth = container.api.auth;
-        this._router.post('/oauth/authorize', async ctx => {
-            await apiAuth.authorize(ctx);
+    rootApi = (services, api) => {
+        this.post('/authorize', async ctx => {
+            await api.auth.authorize(ctx);
             ctx.body = ctx.state.oauth;
         });
-        this._router.post('/oauth/token', async (ctx) => {
-            await apiAuth.token(ctx);
+        this.post('/token', async (ctx) => {
+            await api.auth.token(ctx);
             ctx.body = ctx.state.oauth.valueOf();
         });
-        this._router.del('/oauth/token', async (ctx) => {
-            await apiAuth.revoke(ctx);
+        this.del('/token', async (ctx) => {
+            await api.auth.revoke(ctx);
             ctx.body = ctx.state.oauth;
         });
-        this._router.get('/oauth/:provider', async (ctx) => {
+        this.get('/:provider', async (ctx) => {
             if(!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
-                const service = container.service.oauth.provider;
+                const service = services.oauth.provider;
                 const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
                 ctx.response.header['content-type'] = 'application/json;charset=utf-8';
                 ctx.body = {result: true, url: authorizeUrl, type: typeKey};
             } else {
-                defaultClientForGrant(ctx, container, 'proxy');
-                await apiAuth.token(ctx);
+                defaultClientForGrant(ctx, api.oauth.client, 'proxy');
+                await api.auth.token(ctx);
                 ctx.body = ctx.state.oauth.valueOf();
             }
         });
+    };
 
-        this.routes = () => this._router.routes.apply(this._router);
-        this.allowedMethods = () => this._router.allowedMethods.apply(this._router);
-    }
+    withApi = (services, api) => {
+        //TODO The code redundance.
+        this.post('/oauth/authorize', async ctx => {
+            await api.auth.authorize(ctx);
+            ctx.body = ctx.state.oauth;
+        });
+        this.post('/oauth/token', async (ctx) => {
+            await api.auth.token(ctx);
+            ctx.body = ctx.state.oauth.valueOf();
+        });
+        this.del('/oauth/token', async (ctx) => {
+            await api.auth.revoke(ctx);
+            ctx.body = ctx.state.oauth;
+        });
+        this.get('/oauth/:provider', async (ctx) => {
+            if(!ctx.request.query.code && !ctx.request.query.access_token) {
+                const typeKey = ctx.params.provider;
+                const service = services.oauth.provider;
+                const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
+                ctx.response.header['content-type'] = 'application/json;charset=utf-8';
+                ctx.body = {result: true, url: authorizeUrl, type: typeKey};
+            } else {
+                defaultClientForGrant(ctx, apis.oauth.client, 'proxy');
+                await apis.auth.token(ctx);
+                ctx.body = ctx.state.oauth.valueOf();
+            }
+        });
+    };
+
+    graphQLMiddleware = (services, resolvers) => {
+        if(!services) {
+            throw new Error('No services for graphql resolver');
+        }
+        const graphQLResolver = new GraphQLResolver(services);
+        if(resolvers) {
+            graphQLResolver.combine(resolvers);
+        }
+        const graphQLSchema = makeExecutableSchema({typeDefs: graphql, resolvers: graphQLResolver.get()});
+        return graphQLServer(async ctx => {
+            await this.authenticate(ctx);
+            ctx.state.oauth = ctx.state.oauth || {};
+            return {schema: graphQLSchema, context: {user: ctx.state.oauth.user}};
+        });
+    };
+
+    rootGraphQL = (services, resolvers) => {
+        const middleware = this.graphQLMiddleware(services, resolvers);
+        this.get('/', middleware);
+        this.post('/', middleware);
+        return this;
+    };
+
+    withGraphQL = (services, resolvers) => {
+        const middleware = this.graphQLMiddleware(services, resolvers);
+        this.get('/graphql', middleware);
+        this.post('/graphql', middleware);
+    };
+
 }

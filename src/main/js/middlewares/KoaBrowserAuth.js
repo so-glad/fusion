@@ -8,16 +8,13 @@
 export default class KoaBrowserAuth {
 
     apiAsServer = null;
-    apiAsClient = null;
-    defaultClient = null;
 
     constructor(container) {
-        this.apiAsServer = container.api.auth.server;
-        this.apiAsClient = container.api.auth.client;
-        this.defaultClient = container.oauth.client.local;
+        this.apiAsServer = container.api.auth;
     }
     //OAuth Server actions group
     login = async (ctx, next) => {
+        await this.apiAsServer.token(ctx);
         if (ctx.state.oauth && ctx.state.oauth.user) {
             if (ctx.regenerateSession) {
                 await ctx.regenerateSession();
