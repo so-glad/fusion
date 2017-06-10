@@ -25,6 +25,7 @@ import OAuthProviderService from './services/OAuthProvider';
 //Server Middleware
 import KoaOAuthServer from './middlewares/KoaOAuthServer';
 import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
+import GraphQLResolver from './graphql';
 //Extra
 import KoaUserAgent from './middlewares/KoaUserAgent';
 import Context from './Context';
@@ -128,7 +129,8 @@ export default class Container extends Context {
             .register('service.oauth.client', new OAuthClientService({OAuthClientModel: commonModels.OAuthClient, logger: defaultLogging}))
             .register('service.oauth.token', new OAuthTokenService({OAuthTokenModel: commonModels.OAuthToken, logger: defaultLogging}))
             .register('service.oauth.code', new OAuthCodeService({OAuthCodeModel: commonModels.OAuthCode, logger: defaultLogging}))
-            .register('service.oauth.provider', oauthProviderService);
+            .register('service.oauth.provider', oauthProviderService)
+            .register('graphql.resolver.constructor', GraphQLResolver);
     }
 
     heatUp = async () => {
