@@ -49,6 +49,16 @@ export default class UserService {
         }
     };
 
+    createUser = async (params) => {
+        const salt = bcrypt.genSaltSync(10);
+        const user = await this.userModel.create({
+            username: params.username, password: bcrypt.hashSync(params.password, salt),
+            email: params.email, mobile: params.mobile, alias: params.alias
+        });
+
+
+    };
+
     getUserByUnique = async (key) => {
         try {
             const user = await this.userModel.findOne({

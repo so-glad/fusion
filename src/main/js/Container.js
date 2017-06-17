@@ -8,24 +8,20 @@
 
 import log4js from 'log4js';
 import Sequelize from 'sequelize';
-
+import {OAuth2Server} from 'oauth2-producer';
 //Storage Define
 import RedisStore from './stores/Redis';
-
 //Models classes
 import {sequelize} from 'factors';
-
 //Services
 import UserService from './services/User';
 import OAuthClientService from './services/OAuthClient';
 import OAuthTokenService from './services/OAuthToken';
 import OAuthCodeService from './services/OAuthCode';
 import OAuthProviderService from './services/OAuthProvider';
-
 //Server Middleware
 import KoaOAuthServer from './middlewares/KoaOAuthServer';
 import KoaBrowserAuth from './middlewares/KoaBrowserAuth';
-
 //Extra
 import KoaUserAgent from './middlewares/KoaUserAgent';
 import Context from './Context';
@@ -126,9 +122,18 @@ export default class Container extends Context {
             .register('models.common', commonModels)
             .register('input.agent', new KoaUserAgent(commonModels, defaultLogging))
             .register('service.user', new UserService({UserModel: commonModels.User, logger: defaultLogging}))
-            .register('service.oauth.client', new OAuthClientService({OAuthClientModel: commonModels.OAuthClient, logger: defaultLogging}))
-            .register('service.oauth.token', new OAuthTokenService({OAuthTokenModel: commonModels.OAuthToken, logger: defaultLogging}))
-            .register('service.oauth.code', new OAuthCodeService({OAuthCodeModel: commonModels.OAuthCode, logger: defaultLogging}))
+            .register('service.oauth.client', new OAuthClientService({
+                OAuthClientModel: commonModels.OAuthClient,
+                logger: defaultLogging
+            }))
+            .register('service.oauth.token', new OAuthTokenService({
+                OAuthTokenModel: commonModels.OAuthToken,
+                logger: defaultLogging
+            }))
+            .register('service.oauth.code', new OAuthCodeService({
+                OAuthCodeModel: commonModels.OAuthCode,
+                logger: defaultLogging
+            }))
             .register('service.oauth.provider', oauthProviderService);
     }
 
@@ -138,21 +143,25 @@ export default class Container extends Context {
         const config = this.config;
         const client = await models.OAuthClient.findOne({where: {id: config.client.web}});
 
-        const oauthService = Object.assign({},
+        const oauthServices = Object.assign({},
             this.service.user,
             this.service.oauth.client,
             this.service.oauth.code,
             this.service.oauth.token,
             this.service.oauth.provider);
 
+        const oauthService = new OAuth2Server({service: oauthServices});
+
         const koaOAuthServer = new KoaOAuthServer({
             debug: false,
-            service: oauthService,
-            logger: defaultLogging
+            logger: defaultLogging,
+            delegate: oauthService
         });
 
-        this.register('web.oauth.client', client)
+        this.register('service.oauth', oauthService)
+            .register('web.oauth.client', client)
             .register('api.oauth.client', client)
+            .register('graphql.oauth.client', client)
             .register('api.auth', koaOAuthServer)
             .register('web.auth', new KoaBrowserAuth(this));
 

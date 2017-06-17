@@ -5,7 +5,6 @@
  * @since 2017/6/10.
  */
 
-import UserResolver from './User';
  
 export default class {
 
@@ -15,7 +14,6 @@ export default class {
 
     constructor(services) {
         this.services = services;
-        this.resolvers.push(new UserResolver(services));
     }
 
     get viewer () {

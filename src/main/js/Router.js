@@ -10,6 +10,7 @@ import {graphqlKoa as graphQLServer} from 'graphql-server-koa';
 import {graphql} from 'factors';
 
 import GraphQLResolver from './graphql';
+import UserResolver from './graphql/User';
 // const Role = {Admin: 1};
 
 const defaultClientForGrant = (ctx, client, grant) => {
@@ -46,7 +47,7 @@ export default class Router {
         this.del = (...args) => this.router.del.apply(this.router, args);
         this.routes = () => this.router.routes.apply(this.router);
         this.allowedMethods = () => this.router.allowedMethods.apply(this.router);
-        this.authenticate = container.api.auth.authenticate;
+        this.authenticate = container.web.auth.authenticate;
 
         const routerConf = container.config.router;
         if (!routerConf) {
@@ -58,7 +59,7 @@ export default class Router {
                     this.rootApi(container.service, container.api);
                     break;
                 case 'graphql':
-                    this.rootGraphQL(container.service, container.graphql.resolvers);
+                    this.rootGraphQL(container.service, container.graphql);
                     break;
                 default:
                 case 'web':
@@ -68,10 +69,10 @@ export default class Router {
                 for (const i in routerConf.with) {
                     switch (routerConf.with[i]) {
                         case 'api':
-                            this.withApi(container.service, container.api);
+                            this.withApi(container.service, container.api, '/api');
                             break;
                         case 'graphql':
-                            this.withGraphQL(container.service, container.graphql.resolvers);
+                            this.withGraphQL(container.service, container.graphql);
                     }
                 }
             }
@@ -102,20 +103,20 @@ export default class Router {
         return this;
     };
 
-    rootApi = (services, api) => {
-        this.post('/authorize', async ctx => {
+    withApi = (services, api, prefix) => {
+        this.post(prefix + '/authorize', async ctx => {
             await api.auth.authorize(ctx);
             ctx.body = ctx.state.oauth;
         });
-        this.post('/token', async (ctx) => {
+        this.post(prefix + '/token', async (ctx) => {
             await api.auth.token(ctx);
             ctx.body = ctx.state.oauth.valueOf();
         });
-        this.del('/token', async (ctx) => {
+        this.del(prefix + '/token', async (ctx) => {
             await api.auth.revoke(ctx);
             ctx.body = ctx.state.oauth;
         });
-        this.get('/:provider', async (ctx) => {
+        this.get(prefix + '/:provider', async (ctx) => {
             if (!ctx.request.query.code && !ctx.request.query.access_token) {
                 const typeKey = ctx.params.provider;
                 const service = services.oauth.provider;
@@ -131,43 +132,18 @@ export default class Router {
         return this;
     };
 
-    withApi = (services, api) => {
-        //TODO The code redundance.
-        this.post('/oauth/authorize', async ctx => {
-            await api.auth.authorize(ctx);
-            ctx.body = ctx.state.oauth;
-        });
-        this.post('/oauth/token', async (ctx) => {
-            await api.auth.token(ctx);
-            ctx.body = ctx.state.oauth.valueOf();
-        });
-        this.del('/oauth/token', async (ctx) => {
-            await api.auth.revoke(ctx);
-            ctx.body = ctx.state.oauth;
-        });
-        this.get('/oauth/:provider', async (ctx) => {
-            if (!ctx.request.query.code && !ctx.request.query.access_token) {
-                const typeKey = ctx.params.provider;
-                const service = services.oauth.provider;
-                const authorizeUrl = await service.generateAuthorizeUrl(typeKey, 'login');
-                ctx.response.header['content-type'] = 'application/json;charset=utf-8';
-                ctx.body = {result: true, url: authorizeUrl, type: typeKey};
-            } else {
-                defaultClientForGrant(ctx, apis.oauth.client, 'proxy');
-                await apis.auth.token(ctx);
-                ctx.body = ctx.state.oauth.valueOf();
-            }
-        });
-        return this;
+    rootApi = (services, api) => {
+        return this.withApi(services, api, '');
     };
 
-    graphQLMiddleware = (services, resolvers) => {
+    graphQLMiddleware = (services, graphql) => {
         if (!services) {
             throw new Error('No services for graphql resolver');
         }
         const graphQLResolver = new GraphQLResolver(services);
-        if (resolvers) {
-            graphQLResolver.combine(resolvers);
+        graphQLResolver.combine(new UserResolver(services, graphql.oauth.client));
+        if (graphql.resolvers) {
+            graphQLResolver.combine(graphql.resolvers);
         }
         const graphQLSchema = makeExecutableSchema({typeDefs: this.graphQLTypes, resolvers: graphQLResolver.get()});
         return graphQLServer(async ctx => {
@@ -177,15 +153,15 @@ export default class Router {
         });
     };
 
-    rootGraphQL = (services, resolvers) => {
-        const middleware = this.graphQLMiddleware(services, resolvers);
+    rootGraphQL = (services, graphql) => {
+        const middleware = this.graphQLMiddleware(services, graphql);
         this.get('/', middleware);
         this.post('/', middleware);
         return this;
     };
 
-    withGraphQL = (services, resolvers) => {
-        const middleware = this.graphQLMiddleware(services, resolvers);
+    withGraphQL = (services, graphql) => {
+        const middleware = this.graphQLMiddleware(services, graphql);
         this.get('/graphql', middleware);
         this.post('/graphql', middleware);
         return this;

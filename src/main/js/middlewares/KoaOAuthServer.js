@@ -40,17 +40,16 @@ const transferResponse = (result, res) => {
 export default class KoaOAuthServer {
 
     delegate = null;
-    service = null;
     logger = console;
 
     constructor(options) {
-        this.service = options.service;
         this.logger = options.logger ?
             ( (typeof options.logger === 'string') ?
                 log4js.getLogger(options.logger) : options.logger )
             : console;
         delete options.logger;
-        this.delegate = new OAuth2Server(options);
+        this.delegate = options.delegate ?
+            options.delegate : new OAuth2Server(options);
     }
 
     /**
@@ -138,7 +137,7 @@ export default class KoaOAuthServer {
         const params = new Parameter(ctx.request);
         let result = null;
         try {
-            result = await this.service.revokeToken(params.token);
+            result = await this.delegate.revoke(params.token);
         } catch (e) {
             result = convertError(e);
             this.logger.error('Oauth authenticate error, cause: ' + e.message
