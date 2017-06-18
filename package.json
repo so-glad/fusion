@@ -1,6 +1,6 @@
 {
     "name": "fuxion",
-    "version": "1.0.3",
+    "version": "1.0.2",
     "description": "A framework for user authorization and authentication, principle like simov/grant or jaredhanson/passport, but also including server schema adjust refered from oauthjs/koa-oauth-server,  powered by oauth2, javascript",
     "main": "lib/index.js",
     "scripts": {
@@ -17,7 +17,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/so-glad/fusion.git"
+        "url": "git+https://github.com/so-glad/fuxion.git"
     },
     "keywords": [
         "common",
@@ -29,9 +29,9 @@
     "author": "palmtale <palmtale@glad.so>",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/so-glad/fusion/issues"
+        "url": "https://github.com/so-glad/fuxion/issues"
     },
-    "homepage": "https://github.com/so-glad/fusion#readme",
+    "homepage": "https://github.com/so-glad/fuxion#readme",
     "devDependencies": {
         "babel": "^6.23.0",
         "babel-cli": "^6.24.1",
@@ -65,12 +65,12 @@
         "bcrypt": "^1.0.2",
         "cron": "^1.2.1",
         "log4js": "^1.1.1",
-        "factors": "1.0.0",
-        "oauth2-consumer": "0.0.9",
-        "oauth2-producer": "0.0.5",
+        "factors": "^1.0.0",
+        "oauth2-consumer": "^0.0.9",
+        "oauth2-producer": "^0.0.8",
         "sequelize": "^3.30.4"
     },
     "publishConfig": {
-        "registry": "https://pub.glad.so/repository/sonpm/"
+        "registry": "https://registry.npmjs.org/"
     }
 }
