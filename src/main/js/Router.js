@@ -10,7 +10,6 @@ import {graphqlKoa as graphQLServer} from 'graphql-server-koa';
 import {graphql} from 'factors';
 
 import GraphQLResolver from './graphql';
-import UserResolver from './graphql/User';
 // const Role = {Admin: 1};
 
 const defaultClientForGrant = (ctx, client, grant) => {
@@ -18,6 +17,28 @@ const defaultClientForGrant = (ctx, client, grant) => {
     ctx.request.body.client_id = client.id;
     ctx.request.body.client_secret = client.secret;
     ctx.request.query.provider = ctx.params.provider;
+};
+/* TODO Not required add web cookie in graphql mode,
+ because 3rd login also in web mode,
+ change the reverse proxy while route prefix /login */
+const graphQLWebLogin = async (ctx, next) => {
+    await next();
+    const {data} = JSON.parse(ctx.response.body);
+    const auth = data.login || data.signUp;
+    if(auth) {
+        if (ctx.regenerateSession) {
+            await ctx.regenerateSession();
+        }
+        if (ctx.request.body.remember) {
+            ctx.cookies.set('remember', auth.accessToken, {
+                maxAge: 86400000,
+                httpOnly: true,
+                signed: true
+            });
+        }
+        ctx.session.client = auth.client;
+        ctx.session.user = auth.user;
+    }
 };
 
 export default class Router {
@@ -141,15 +162,14 @@ export default class Router {
             throw new Error('No services for graphql resolver');
         }
         const graphQLResolver = new GraphQLResolver(services);
-        graphQLResolver.combine(new UserResolver(services, graphql.oauth.client));
         if (graphql.resolvers) {
             graphQLResolver.combine(graphql.resolvers);
         }
         const graphQLSchema = makeExecutableSchema({typeDefs: this.graphQLTypes, resolvers: graphQLResolver.get()});
         return graphQLServer(async ctx => {
             await this.authenticate(ctx);
-            ctx.state.oauth = ctx.state.oauth || {};
-            return {schema: graphQLSchema, context: {user: ctx.state.oauth.user}};
+            const {user} = Object.assign({}, ctx.session, ctx.state.oauth);
+            return {schema: graphQLSchema, context: {user: user, client: graphql.oauth.client}};
         });
     };
 
@@ -162,8 +182,8 @@ export default class Router {
 
     withGraphQL = (services, graphql) => {
         const middleware = this.graphQLMiddleware(services, graphql);
-        this.get('/graphql', middleware);
-        this.post('/graphql', middleware);
+        this.get('/graphql', graphQLWebLogin, middleware);
+        this.post('/graphql', graphQLWebLogin, middleware);
         return this;
     };
 

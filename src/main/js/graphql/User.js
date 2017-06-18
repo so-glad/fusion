@@ -10,26 +10,23 @@ export default class UserResolver {
 
     services = null;
 
-    client = null;
-
-    constructor(services, client) {
+    constructor(services) {
         this.services = services;
-        this.client = client;
     }
 
-    _login = async (username, password) => {
+    _login = async (username, password, client) => {
         const oauthService = this.services.oauth;
         const result = await oauthService.token({
             params: {
                 grant_type: 'password',
-                client_id: this.client.id, client_secret: this.client.secret,
+                client_id: client.id, client_secret: client.secret,
                 username: username, password: password
             }
         });
-        const r = result.body;
-        r.expiresIn = r.accessTokenLifetime;
-        delete r.accessTokenLifetime;
-        return r;
+        const auth = result.body;
+        auth.expiresIn = auth.accessTokenLifetime;
+        delete auth.accessTokenLifetime;
+        return auth;
     };
 
     get viewer() {
@@ -53,20 +50,20 @@ export default class UserResolver {
 
     get mutation() {
         return {
-            login: async(_, {username, password}) => {
+            login: async(_, {username, password}, context) => {
                 //login(username: String, password: String): AuthenticatePayload
                 try {
-                    return await this._login(username, password);
+                    return await this._login(username, password, context.client);
                 } catch (e) {
                     return 500;
                 }
             },
 
-            signUp: async(_, {input}) => {
+            signUp: async(_, {input}, context) => {
                 const userService = this.services.user;
                 try {
                     await userService.createUser(input);
-                    return await this._login(input.username, input.password);
+                    return await this._login(input.username, input.password, context.client);
                 } catch(e) {
                     return 500;
                 }
