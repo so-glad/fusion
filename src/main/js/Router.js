@@ -165,11 +165,14 @@ export default class Router {
         if (graphql.resolvers) {
             graphQLResolver.combine(graphql.resolvers);
         }
-        const graphQLSchema = makeExecutableSchema({typeDefs: this.graphQLTypes, resolvers: graphQLResolver.get()});
+        const graphQLSchema = makeExecutableSchema({typeDefs: this.graphQLTypes,
+            resolvers: graphQLResolver.get()});
         return graphQLServer(async ctx => {
             await this.authenticate(ctx);
             const {user} = Object.assign({}, ctx.session, ctx.state.oauth);
-            return {schema: graphQLSchema, context: {user: user, client: graphql.oauth.client}};
+            return {schema: graphQLSchema, context: {
+                user: user, client: graphql.oauth.client, session: ctx.session
+            }};
         });
     };
 

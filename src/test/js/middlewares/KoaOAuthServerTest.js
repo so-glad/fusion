@@ -11,7 +11,7 @@ import bodyParser from 'koa-bodyparser';
 import session from 'koa-session';
 import Router from 'koa-router';
 
-import RedisStore from '../../../main/js/stores/Redis';
+import RedisStore from '../../../main/js/caches/Redis';
 
 
 const app = new Koa();

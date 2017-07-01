@@ -105,17 +105,17 @@ export default class RedisStore extends EventEmitter {
         }
     };
 
-    set = async (key, session, maxAge) => {
+    set = async (key, value, maxAge) => {
         if (typeof maxAge === 'number') {
             maxAge = Math.ceil(maxAge / 1000);
         }
-        session = JSON.stringify(session);
+        value = JSON.stringify(value);
         if (maxAge) {
-            debug('SETEX %s %s %s', key, maxAge, session);
-            await this.client.setex(key, maxAge, session);
+            debug('SETEX %s %s %s', key, maxAge, value);
+            await this.client.setex(key, maxAge, value);
         } else {
-            debug('SET %s %s', key, session);
-            await this.client.set(key, session);
+            debug('SET %s %s', key, value);
+            await this.client.set(key, value);
         }
         debug('SET %s complete', key);
     };

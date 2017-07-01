@@ -10,7 +10,7 @@ import log4js from 'log4js';
 import Sequelize from 'sequelize';
 import {OAuth2Server} from 'oauth2-producer';
 //Storage Define
-import RedisStore from './stores/Redis';
+import RedisStore from './caches/Redis';
 //Models classes
 import {sequelize} from 'factors';
 //Services
@@ -82,7 +82,7 @@ const configOAuthProviders = async (clientConfig, providerModel) => {
     return providers;
 };
 
-const configSessionStore = (sessionConfig) => {
+const configSessionCache = (sessionConfig) => {
     const redisBasic = sessionConfig.redis;
 
     if (sessionConfig.store.indexOf('redis') === 0) {
@@ -107,7 +107,7 @@ export default class Container extends Context {
         const commonModels = configCommonModels(databases.common);
 
         this.config.session.store =
-            configSessionStore(Object.assign({redis: this.config.databases.redis}, this.config.session));
+            configSessionCache(Object.assign({redis: this.config.databases.redis}, this.config.session));
 
         const providers = configOAuthProviders(config.client, commonModels.OAuthProvider);
         const oauthProviderService = new OAuthProviderService({
